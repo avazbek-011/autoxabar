@@ -12,15 +12,29 @@
     </div>
 
     <div class="grid g2 gap-lg" style="max-width:760px;margin-inline:auto">
-      <a href="{{ cfg.TELEGRAM_BOT }}" target="_blank" rel="noopener" class="feature card-hover">
+      {% if contacts.person %}
+      <a href="https://t.me/{{ contacts.person.lstrip('@') }}" target="_blank" rel="noopener" class="feature card-hover">
         <div class="feature-ico">{{ icon('message', 23) }}</div>
         <h4>Qo‘llab-quvvatlash</h4>
-        <p>Texnik savollar va yordam uchun botga yozing.</p>
+        <p>Texnik savollar va yordam uchun yozing: {{ contacts.person }}</p>
       </a>
-      <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="feature card-hover">
+      {% endif %}
+      {% if contacts.channel %}
+      <a href="{{ contacts.channel }}" target="_blank" rel="noopener" class="feature card-hover">
         <div class="feature-ico">{{ icon('telegram', 23) }}</div>
         <h4>Yangiliklar kanali</h4>
         <p>Yangilanishlar va texnik ishlar haqida xabarlar.</p>
+      </a>
+      {% endif %}
+      <a href="{{ url_for('site.guide') }}" class="feature card-hover">
+        <div class="feature-ico">{{ icon('file', 23) }}</div>
+        <h4>Qo‘llanma</h4>
+        <p>Ulash, sozlash va ishga tushirish bo‘yicha to‘liq yo‘riqnoma.</p>
+      </a>
+      <a href="{{ url_for('site.pricing') }}" class="feature card-hover">
+        <div class="feature-ico">{{ icon('wallet', 23) }}</div>
+        <h4>Narxlar</h4>
+        <p>Obuna shartlari va to‘lov usullari haqida.</p>
       </a>
     </div>
 
@@ -32,7 +46,9 @@
       </p>
       <div class="divider"></div>
       <div class="flex gap wrap">
-        <span class="badge badge-gold">{{ icon('user', 13) }} {{ cfg.SUPPORT_CONTACT }}</span>
+        {% if contacts.person %}
+        <span class="badge badge-gold">{{ icon('user', 13) }} {{ contacts.person }}</span>
+        {% endif %}
         <span class="badge badge-muted">{{ icon('globe', 13) }} O‘zbekiston</span>
       </div>
     </div>

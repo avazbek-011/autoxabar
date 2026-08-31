@@ -91,9 +91,11 @@ class Config:
     # --- Brend ---
     BRAND_NAME = "VIPADSUZ"
     PRODUCT_NAME = "AutoXabar"
-    TELEGRAM_CHANNEL = "https://t.me/auto_habar"
-    TELEGRAM_BOT = "https://t.me/AutoXabarbot"
-    SUPPORT_CONTACT = "@vipadsuz_admin"
+    # Aloqa ma'lumotlari admin panelidan to'ldiriladi (Sozlamalar bo'limi).
+    # Bo'sh bo'lsa saytda umuman ko'rsatilmaydi.
+    TELEGRAM_CHANNEL = _str("TELEGRAM_CHANNEL")
+    TELEGRAM_BOT = _str("TELEGRAM_BOT")
+    SUPPORT_CONTACT = _str("SUPPORT_CONTACT")
 
     # Ruxsat etilgan yuborish intervallari (daqiqa)
     INTERVALS = [2, 5, 7, 10, 15, 20, 25, 30]

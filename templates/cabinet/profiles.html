@@ -19,7 +19,105 @@
 </div>
 {% endif %}
 
-{% if connect %}
+{% if connect and connect.stage == 'qr' %}
+  <div class="card card-accent">
+    <div class="card-head">
+      <div class="card-title">{{ icon('grid', 19) }} QR kod bilan ulash</div>
+      <form method="post" action="{{ url_for('cabinet.profile_connect_cancel') }}" data-no-loading>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm">{{ icon('x', 15) }} Bekor qilish</button>
+      </form>
+    </div>
+
+    <div class="grid g2 gap-lg" style="align-items:center">
+      <div class="center">
+        <div style="display:inline-block;padding:14px;border-radius:20px;background:#fff;
+                    box-shadow:0 14px 40px rgba(0,0,0,.35)">
+          <img id="qrImg" src="{{ url_for('cabinet.profile_qr_image') }}"
+               alt="QR kod" width="240" height="240"
+               style="display:block;width:240px;height:240px;image-rendering:pixelated">
+        </div>
+        <div class="small muted mt" id="qrHint">
+          <span class="dot dot-live" style="color:var(--ok)"></span>
+          Skanerlashni kutmoqda...
+        </div>
+      </div>
+
+      <div>
+        <h4 class="mb">Telefoningizda qanday skanerlanadi</h4>
+        <div class="steps" style="gap:12px">
+          <div class="step" style="padding:14px">
+            <div class="step-num" style="width:34px;height:34px;font-size:.9rem"></div>
+            <div><p style="color:var(--ink-2)">Telegram ilovasini oching</p></div>
+          </div>
+          <div class="step" style="padding:14px">
+            <div class="step-num" style="width:34px;height:34px;font-size:.9rem"></div>
+            <div><p style="color:var(--ink-2)"><b>Sozlamalar</b> → <b>Qurilmalar</b></p></div>
+          </div>
+          <div class="step" style="padding:14px">
+            <div class="step-num" style="width:34px;height:34px;font-size:.9rem"></div>
+            <div><p style="color:var(--ink-2)"><b>Kompyuterni ulash</b> tugmasini bosing</p></div>
+          </div>
+          <div class="step" style="padding:14px">
+            <div class="step-num" style="width:34px;height:34px;font-size:.9rem"></div>
+            <div><p style="color:var(--ink-2)">Kamerani shu QR kodga qarating</p></div>
+          </div>
+        </div>
+        <div class="alert alert-info mt">
+          {{ icon('info', 19) }}
+          <div class="small">QR kod har 25 soniyada yangilanadi — bu normal holat.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var img = document.getElementById('qrImg');
+    var hint = document.getElementById('qrHint');
+    var statusUrl = "{{ url_for('cabinet.profile_qr_status') }}";
+    var imgUrl = "{{ url_for('cabinet.profile_qr_image') }}";
+    var stopped = false;
+
+    function refreshImage() {
+      if (stopped) return;
+      img.src = imgUrl + '?t=' + Date.now();
+    }
+
+    function poll() {
+      if (stopped) return;
+      fetch(statusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.status === 'ok' && d.redirect) {
+            stopped = true;
+            hint.innerHTML = '<b style="color:var(--ok)">Ulandi! Yo\u2018naltirilmoqda...</b>';
+            location.href = d.redirect;
+            return;
+          }
+          if (d.status === 'password') {
+            stopped = true;
+            location.reload();
+            return;
+          }
+          if (d.status === 'expired' || d.status === 'error') {
+            stopped = true;
+            hint.innerHTML = '<b style="color:var(--danger)">QR muddati tugadi. '
+              + 'Qaytadan boshlang</b>';
+            setTimeout(function () { location.reload(); }, 2000);
+            return;
+          }
+          setTimeout(poll, 2000);
+        })
+        .catch(function () { setTimeout(poll, 3000); });
+    }
+
+    setInterval(refreshImage, 24000);
+    setTimeout(poll, 1500);
+  })();
+  </script>
+
+{% elif connect %}
   <div class="card card-accent">
     <div class="card-head">
       <div class="card-title">{{ icon('telegram', 19) }} Akkauntni ulash</div>
@@ -64,25 +162,51 @@
     </form>
     {% endif %}
   </div>
+
 {% elif can_add %}
   <div class="card">
     <div class="card-head">
-      <div class="card-title">{{ icon('plus', 19) }} Yangi profil ulash</div>
+      <div class="card-title">{{ icon('plus', 19) }} Yangi akkaunt ulash</div>
+      <span class="badge badge-muted">{{ profiles | length }} / {{ limit }}</span>
     </div>
-    <form method="post" action="{{ url_for('cabinet.profile_connect') }}" class="flex gap wrap items-center">
-      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <div class="input-group grow" style="min-width:260px">
-        <span class="ig-icon">{{ icon('phone', 17) }}</span>
-        <input class="input" name="phone" data-phone inputmode="tel"
-               placeholder="Telegram akkaunt raqami" required>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="telefon">{{ icon('phone', 15) }} Telefon raqami</button>
+      <button class="tab" data-tab="qrkod">{{ icon('grid', 15) }} QR kod</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="telefon">
+      <form method="post" action="{{ url_for('cabinet.profile_connect') }}" class="flex gap wrap items-center">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="input-group grow" style="min-width:260px">
+          <span class="ig-icon">{{ icon('phone', 17) }}</span>
+          <input class="input" name="phone" data-phone inputmode="tel"
+                 placeholder="Telegram akkaunt raqami" required>
+        </div>
+        <button class="btn btn-primary">{{ icon('send', 18) }} Kod yuborish</button>
+      </form>
+      <p class="hint">
+        Telegram ilovangizga 5 xonali kod keladi. Kod faqat sessiya yaratish uchun
+        ishlatiladi va saqlanmaydi.
+      </p>
+    </div>
+
+    <div class="tab-panel" data-panel="qrkod">
+      <div class="flex gap wrap items-center">
+        <div class="grow" style="min-width:240px">
+          <p class="small" style="color:var(--ink-2)">
+            Eng tez va xavfsiz usul — kod kutish shart emas. Telegram ilovasida
+            <b>Sozlamalar → Qurilmalar → Kompyuterni ulash</b> orqali skanerlanadi.
+          </p>
+        </div>
+        <form method="post" action="{{ url_for('cabinet.profile_qr_start') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-primary">{{ icon('grid', 18) }} QR kodni ko‘rsatish</button>
+        </form>
       </div>
-      <button class="btn btn-primary">{{ icon('telegram', 18) }} Kod yuborish</button>
-    </form>
-    <p class="hint">
-      Telegram ilovangizga 5 xonali kod keladi. Kod faqat sessiya yaratish uchun ishlatiladi
-      va saqlanmaydi.
-    </p>
+    </div>
   </div>
+
 {% else %}
   <div class="alert alert-warn">
     {{ icon('alert', 19) }}

@@ -122,6 +122,34 @@
         </div>
       </div>
 
+      <div class="divider"></div>
+      <div class="card-title mb" style="font-size:.92rem">{{ icon('message', 17) }} Aloqa ma'lumotlari</div>
+      <div class="hint mb">Bo‘sh qoldirsangiz, saytda umuman ko‘rsatilmaydi.</div>
+
+      <div class="field">
+        <label class="label" for="sup_person">Qo‘llab-quvvatlash (Telegram username)</label>
+        <input class="input" id="sup_person" name="support_contact" value="{{ s.support_contact }}"
+               placeholder="@sizning_username">
+      </div>
+      <div class="field">
+        <label class="label" for="sup_channel">Yangiliklar kanali (to‘liq havola)</label>
+        <input class="input" id="sup_channel" name="support_channel" value="{{ s.support_channel }}"
+               placeholder="https://t.me/sizning_kanalingiz">
+      </div>
+      <div class="field">
+        <label class="label" for="sup_bot">Telegram bot (to‘liq havola)</label>
+        <input class="input" id="sup_bot" name="support_bot" value="{{ s.support_bot }}"
+               placeholder="https://t.me/sizning_botingiz">
+      </div>
+      <div class="field">
+        <label class="label" for="promo_site">Bepul rejada xabar ostiga qo‘shiladigan sayt</label>
+        <input class="input" id="promo_site" name="promo_site" value="{{ s.promo_site }}"
+               placeholder="vipadsuz.uz">
+        <div class="hint">Bo‘sh bo‘lsa, bepul rejada ham hech qanday reklama qo‘shilmaydi.</div>
+      </div>
+
+      <div class="divider"></div>
+
       <div class="field">
         <label class="label" for="announce">E'lon matni (kabinetda ko‘rinadi)</label>
         <textarea class="textarea" id="announce" name="announce" maxlength="500"

@@ -40,7 +40,7 @@
       <h3 class="mb">5. Sizning huquqlaringiz</h3>
       <p class="mb-lg small">
         Istalgan vaqtda ma‘lumotlaringizni ko‘rish, tuzatish yoki butunlay o‘chirishni
-        so‘rashingiz mumkin. Buning uchun {{ cfg.SUPPORT_CONTACT }} manziliga murojaat qiling.
+        so‘rashingiz mumkin. Buning uchun {% if contacts.person %}{{ contacts.person }} manziliga{% else %}aloqa sahifasidagi manzilga{% endif %} murojaat qiling.
       </p>
 
       <h3 class="mb">6. Xavfsizlik</h3>

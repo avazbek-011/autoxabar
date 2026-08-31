@@ -119,10 +119,12 @@
           </a>
         </div>
       {% endif %}
-      <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener"
+      {% if contacts.channel %}
+      <a href="{{ contacts.channel }}" target="_blank" rel="noopener"
          class="nav-item" style="margin-top:10px">
         {{ icon('telegram', 19) }} Yangiliklar kanali
       </a>
+      {% endif %}
     </div>
   </aside>
 

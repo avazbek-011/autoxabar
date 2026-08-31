@@ -443,6 +443,10 @@ def get_setting_int(key, default=0, db=None):
 
 DEFAULT_SETTINGS = {
     "telegram_engine": "auto",
+    "support_channel": "",
+    "support_bot": "",
+    "support_contact": "",
+
     "site_open": "1",
     "registration_open": "1",
     "maintenance_note": "",

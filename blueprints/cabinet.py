@@ -6,8 +6,10 @@ from datetime import timedelta
 
 from flask import (
     Blueprint,
+    abort,
     flash,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
@@ -302,6 +304,79 @@ def profile_connect_cancel():
     return redirect(url_for("cabinet.profiles"))
 
 
+
+# ---------------------------------------------------------------- QR ulash
+@bp.route("/profillar/qr", methods=["POST"])
+@login_required
+def profile_qr_start():
+    """QR orqali ulashni boshlaydi."""
+    user = current_user()
+    limit = get_setting_int("max_profiles_per_user", 10)
+    count = scalar("SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user["id"],))
+    if count >= limit:
+        flash("Profillar chegarasiga yetdingiz ({} ta)".format(limit), "error")
+        return redirect(url_for("cabinet.profiles"))
+
+    try:
+        token = tg.start_qr_login()
+    except tg.TgError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("cabinet.profiles"))
+    except Exception as exc:
+        log.exception("QR boshlashda xato")
+        flash("QR kod yaratilmadi: {}".format(str(exc)[:120]), "error")
+        return redirect(url_for("cabinet.profiles"))
+
+    session["tg_connect"] = {"token": token, "phone": "", "stage": "qr", "qr": True}
+    return redirect(url_for("cabinet.profiles") + "#qr")
+
+
+@bp.route("/profillar/qr/rasm")
+@login_required
+def profile_qr_image():
+    """QR kod rasmi (PNG)."""
+    conn = session.get("tg_connect") or {}
+    if not conn.get("qr"):
+        abort(404)
+    png = tg.qr_png(conn["token"])
+    resp = make_response(png)
+    resp.headers["Content-Type"] = "image/png"
+    resp.headers["Cache-Control"] = "no-store, max-age=0"
+    return resp
+
+
+@bp.route("/profillar/qr/holat")
+@login_required
+def profile_qr_status():
+    """Brauzer har 2 soniyada shu manzilni so'raydi."""
+    conn = session.get("tg_connect") or {}
+    if not conn.get("qr"):
+        return jsonify(status="expired")
+
+    state = tg.qr_status(conn["token"])
+
+    if state["status"] == "ok":
+        info = tg.qr_info(conn["token"])
+        if info:
+            user = current_user()
+            profile_id = _create_profile(user, info.get("phone") or "QR", info)
+            tg.login_store.drop(conn["token"], disconnect=False)
+            session.pop("tg_connect", None)
+            return jsonify(status="ok",
+                           redirect=url_for("cabinet.profile_detail", profile_id=profile_id))
+        return jsonify(status="waiting")
+
+    if state["status"] == "password":
+        conn["stage"] = "password"
+        session["tg_connect"] = conn
+        return jsonify(status="password", redirect=url_for("cabinet.profiles"))
+
+    if state["status"] in ("expired", "error"):
+        session.pop("tg_connect", None)
+        return jsonify(status=state["status"], error=state.get("error", ""))
+
+    return jsonify(status="waiting")
+
 def _finish_connect(user, conn, info):
     """Ulanish yakuni: profil yaratiladi va guruhlar o'qiladi."""
     session.pop("tg_connect", None)
@@ -310,7 +385,13 @@ def _finish_connect(user, conn, info):
         flash("Telegram sessiyasi olinmadi. Qaytadan urinib ko‘ring", "error")
         return redirect(url_for("cabinet.profiles"))
 
-    title = info.get("first_name") or info.get("username") or conn["phone"]
+    profile_id = _create_profile(user, conn["phone"], info)
+    return redirect(url_for("cabinet.profile_detail", profile_id=profile_id))
+
+
+def _create_profile(user, phone, info):
+    """Profil yozuvini yaratadi, sinov muddatini beradi va guruhlarni o'qiydi."""
+    title = info.get("first_name") or info.get("username") or phone
     profile_id = execute(
         "INSERT INTO profiles(user_id, title, phone, tg_user_id, tg_username, "
         "tg_first_name, session_string, status, interval_min, smart_rest, "
@@ -318,7 +399,7 @@ def _finish_connect(user, conn, info):
         (
             user["id"],
             title[:60],
-            conn["phone"],
+            info.get("phone") or phone,
             info.get("tg_user_id", ""),
             info.get("username", ""),
             info.get("first_name", ""),
@@ -334,15 +415,16 @@ def _finish_connect(user, conn, info):
     # Bepul sinov muddati
     billing_svc.start_trial(user["id"], profile_id)
 
-    # Guruhlarni darhol o'qib olamiz
+    # Guruh va kanallarni darhol o'qib olamiz
     try:
         added = _sync_groups(profile_id, info.get("session", ""))
         flash("Profil ulandi. {} ta guruh topildi".format(added), "success")
     except Exception as exc:
-        flash("Profil ulandi, lekin guruhlarni o‘qib bo‘lmadi: {}".format(exc), "warning")
+        log.warning("Guruhlarni o'qishda xato: %s", exc)
+        flash("Profil ulandi. Guruhlarni «Yangilash» tugmasi bilan yuklang", "warning")
 
-    audit(user["id"], "profile_connect", profile_id, {"phone": conn["phone"]})
-    return redirect(url_for("cabinet.profile_detail", profile_id=profile_id))
+    audit(user["id"], "profile_connect", profile_id, {"phone": phone})
+    return profile_id
 
 
 def _sync_groups(profile_id, session_string):

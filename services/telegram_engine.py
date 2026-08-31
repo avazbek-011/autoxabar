@@ -15,6 +15,7 @@ Telethon yoki API kalitlari mavjud bo'lmasa — DEMO rejimda ishlaydi
 """
 import asyncio
 import hashlib
+import io
 import logging
 import os
 import random
@@ -466,6 +467,132 @@ def _demo_account(phone):
         "phone": phone,
         "demo": True,
     }
+
+
+# ---------------------------------------------------------------- QR ulash
+QR_TTL = 300          # QR sessiyasi umri (soniya)
+QR_REFRESH = 25       # Telegram tokeni ~30s yashaydi, undan oldin yangilaymiz
+
+
+def start_qr_login():
+    """QR orqali ulashni boshlaydi. Qaytaradi: token.
+
+    Telegram ilovasida: Sozlamalar -> Qurilmalar -> QR kodni skanerlash.
+    """
+    if is_demo():
+        return login_store.put({
+            "demo": True, "qr": True, "stage": "qr",
+            "url": "tg://login?token=DEMO", "status": "waiting",
+            "started": time.time(),
+        })
+
+    async def _work():
+        client = _client_from_session()
+        await client.connect()
+        qr = await client.qr_login()
+        return client, qr
+
+    client, qr = _loop.run(_work(), timeout=60)
+    token = login_store.put({
+        "client": client, "qr_obj": qr, "qr": True, "stage": "qr",
+        "url": qr.url, "status": "waiting", "started": time.time(),
+    })
+
+    # Fon kuzatuvchisi: foydalanuvchi skanerlashini kutadi
+    asyncio.run_coroutine_threadsafe(_qr_watcher(token), _loop.ensure())
+    return token
+
+
+async def _qr_watcher(token):
+    """QR tasdiqlanishini kutadi, muddati tugasa kodni yangilaydi."""
+    item = login_store.get(token)
+    if not item:
+        return
+    qr = item["qr_obj"]
+    client = item["client"]
+    deadline = time.time() + QR_TTL
+
+    try:
+        while time.time() < deadline:
+            if login_store.get(token) is None:
+                return  # foydalanuvchi bekor qildi
+            try:
+                await qr.wait(QR_REFRESH)
+            except asyncio.TimeoutError:
+                try:
+                    await qr.recreate()
+                    item["url"] = qr.url
+                except Exception:
+                    item["status"] = "expired"
+                    return
+                continue
+            except errors.SessionPasswordNeededError:
+                item["status"] = "password"
+                item["stage"] = "password"
+                return
+            except Exception as exc:
+                log.exception("QR kutishda xato")
+                item["status"] = "error"
+                item["error"] = str(exc)[:200]
+                return
+
+            # Muvaffaqiyat
+            item["info"] = await _collect_account(client)
+            item["status"] = "ok"
+            return
+
+        item["status"] = "expired"
+    except Exception as exc:
+        log.exception("QR kuzatuvchisi xatosi")
+        item["status"] = "error"
+        item["error"] = str(exc)[:200]
+
+
+def qr_status(token):
+    """QR holati: waiting | password | ok | expired | error"""
+    item = login_store.get(token)
+    if not item:
+        return {"status": "expired"}
+
+    # DEMO: 6 soniyadan keyin muvaffaqiyatli deb hisoblaymiz
+    if item.get("demo"):
+        if time.time() - item["started"] > 6:
+            if "info" not in item:
+                item["info"] = _demo_account("+998900000000")
+            item["status"] = "ok"
+        return {"status": item["status"], "url": item.get("url", "")}
+
+    return {
+        "status": item.get("status", "waiting"),
+        "url": item.get("url", ""),
+        "error": item.get("error", ""),
+    }
+
+
+def qr_info(token):
+    """Ulanish muvaffaqiyatli bo'lsa akkaunt ma'lumotini qaytaradi."""
+    item = login_store.get(token)
+    if not item or item.get("status") != "ok":
+        return None
+    return item.get("info")
+
+
+def qr_png(token):
+    """QR kod rasmini PNG bayt sifatida qaytaradi."""
+    import qrcode
+
+    item = login_store.get(token)
+    url = (item or {}).get("url") or "tg://login?token=expired"
+
+    qr = qrcode.QRCode(version=None, box_size=9, border=2,
+                       error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#1E0526", back_color="#FFFFFF")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 # ---------------------------------------------------------------- guruhlar

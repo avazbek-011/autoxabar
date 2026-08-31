@@ -10,6 +10,7 @@ import threading
 import time
 from datetime import timedelta
 
+from config import config
 from core.db import execute, now, now_str, query, update, worker_db
 from core.utils import dt_str, notify, parse_dt
 from services import telegram_engine as tg
@@ -26,10 +27,18 @@ REST_MIN, REST_MAX = 3, 5    # tanaffus (daqiqa)
 # Bir siklda ko'pi bilan shuncha guruh
 MAX_GROUPS_PER_CYCLE = 400
 
-FREE_FOOTER = (
-    "\n\n➖➖➖➖➖➖➖➖\n"
-    "📢 Xabaringiz avtomatik tarqatilsin — @AutoXabarbot | vipadsuz.uz"
-)
+def free_footer():
+    """Bepul rejada xabar ostiga qo'shiladigan matn (o'z saytimizga havola)."""
+    from core.db import get_setting
+
+    site = (get_setting("promo_site", "") or config.BASE_URL or "").strip()
+    site = site.replace("https://", "").replace("http://", "").rstrip("/")
+    if not site or site.startswith("127.0.0.1") or site.startswith("localhost"):
+        return ""
+    return (
+        "\n\n➖➖➖➖➖➖➖➖\n"
+        "📢 Xabaringiz avtomatik tarqatilsin — {}".format(site)
+    )
 
 _stop = threading.Event()
 _thread = None
@@ -88,7 +97,7 @@ def compose_text(ad, profile):
     """Xabar matni: FREE rejimda pastiga reklama qo'shiladi."""
     body = ad["body"] or ""
     if profile["plan"] != "pro":
-        body += FREE_FOOTER
+        body += free_footer()
     return body
 
 

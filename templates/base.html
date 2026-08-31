@@ -78,10 +78,16 @@
           E'loningizni Telegram guruhlariga avtomatik tarqatuvchi xizmat.
           Bir marta sozlang — u kecha-kunduz siz uchun ishlaydi.
         </p>
+        {% if contacts.channel or contacts.bot %}
         <div class="socials mt">
-          <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" aria-label="Telegram kanal">{{ icon('telegram', 18) }}</a>
-          <a href="{{ cfg.TELEGRAM_BOT }}" target="_blank" rel="noopener" aria-label="Telegram bot">{{ icon('message', 18) }}</a>
+          {% if contacts.channel %}
+          <a href="{{ contacts.channel }}" target="_blank" rel="noopener" aria-label="Telegram kanal">{{ icon('telegram', 18) }}</a>
+          {% endif %}
+          {% if contacts.bot %}
+          <a href="{{ contacts.bot }}" target="_blank" rel="noopener" aria-label="Telegram bot">{{ icon('message', 18) }}</a>
+          {% endif %}
         </div>
+        {% endif %}
       </div>
 
       <div class="footer-col">
@@ -109,7 +115,7 @@
 
     <div class="footer-bottom">
       <span>© {{ year }} {{ cfg.BRAND_NAME }}. Barcha huquqlar himoyalangan.</span>
-      <span>{{ cfg.SUPPORT_CONTACT }}</span>
+      {% if contacts.person %}<span>{{ contacts.person }}</span>{% endif %}
     </div>
   </div>
 </footer>

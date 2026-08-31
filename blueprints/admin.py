@@ -443,6 +443,10 @@ def settings():
             "announce": (request.form.get("announce") or "")[:500],
             "bank_name": (request.form.get("bank_name") or "")[:120],
             "bank_account": (request.form.get("bank_account") or "")[:60],
+            "support_channel": (request.form.get("support_channel") or "")[:200],
+            "support_bot": (request.form.get("support_bot") or "")[:200],
+            "support_contact": (request.form.get("support_contact") or "")[:60],
+            "promo_site": (request.form.get("promo_site") or "")[:120],
         }
         try:
             float(fields["tax_percent"])
@@ -467,6 +471,7 @@ def settings():
         "price_per_profile", "tax_percent", "acquiring_percent", "trial_days",
         "max_profiles_per_user", "registration_open", "free_plan_enabled",
         "site_open", "announce", "bank_name", "bank_account", "telegram_engine",
+        "support_channel", "support_bot", "support_contact", "promo_site",
     ]
     values = {key: get_setting(key, "") for key in keys}
     if not values.get("telegram_engine"):

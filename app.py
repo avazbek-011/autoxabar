@@ -8,7 +8,7 @@ from flask import Flask, g, redirect, render_template, request, url_for
 from config import config
 from core import db as dbmod
 from core.auth import current_user
-from core.db import init_db, now, query
+from core.db import get_setting, init_db, now, query
 from core.utils import (
     compact,
     csrf_token,
@@ -101,6 +101,11 @@ def _register_context(app):
         user = current_user()
         ctx = {
             "cfg": config,
+            "contacts": {
+                "channel": get_setting("support_channel", "") or config.TELEGRAM_CHANNEL,
+                "bot": get_setting("support_bot", "") or config.TELEGRAM_BOT,
+                "person": get_setting("support_contact", "") or config.SUPPORT_CONTACT,
+            },
             "user": user,
             "year": now().year,
             "asset_v": ASSET_VERSION,

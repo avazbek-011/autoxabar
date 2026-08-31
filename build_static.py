@@ -73,7 +73,8 @@ def rewrite(html, app_url):
 
 
 def main():
-    app_url = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://t.me/AutoXabarbot"
+    # Haqiqiy dastur manzili berilmasa, tugmalar aloqa sahifasiga olib boradi
+    app_url = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "aloqa.html"
 
     from app import app
 

@@ -11,8 +11,8 @@
       Hozircha yangi foydalanuvchilar qabul qilinmayapti.
       Ochilishi haqida kanalimizda xabar beramiz.
     </p>
-    <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="btn btn-primary btn-block">
-      {{ icon('telegram', 18) }} Kanalga obuna bo‘lish
+    <a href="{{ url_for('site.index') }}" class="btn btn-primary btn-block">
+      {{ icon('home', 18) }} Bosh sahifaga
     </a>
     <div class="auth-foot">
       Hisobingiz bormi? <a href="{{ url_for('auth.login_view') }}">Kirish</a>
