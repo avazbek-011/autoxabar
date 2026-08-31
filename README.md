@@ -254,3 +254,26 @@ Shundan keyin baza deploylardan keyin ham saqlanadi.
 
 > Payme integratsiyasi uchun HTTPS manzil shart — Render buni avtomatik beradi.
 > Payme kassasidagi Endpoint URL: `https://sizning-manzilingiz.onrender.com/api/payme`
+
+---
+
+## 9. GitHub Pages — tanishtiruv sahifasi
+
+Repozitoriyning `docs/` papkasida saytning **ochiq sahifalari** statik holda
+saqlanadi (bosh sahifa, narxlar, qo'llanma, oferta, maxfiylik).
+
+Ular <https://avazbek-011.github.io/autoxabar/> manzilida ko'rinadi — server
+kerak emas, chunki bu sahifalarda ma'lumotlar bazasi ishlatilmaydi.
+
+> Kabinet, admin panel va to'lovlar Python serverini talab qiladi — ular
+> GitHub Pages'da ishlamaydi. Ular uchun Render (8-bo'lim) kerak.
+
+Sahifalarni qayta yig'ish:
+
+```bash
+python build_static.py https://autoxabar.onrender.com
+```
+
+Argument sifatida haqiqiy dastur manzili beriladi — statik sahifadagi
+«Boshlash» va «Kirish» tugmalari o'sha manzilga yo'naltiriladi.
+Argument berilmasa, tugmalar Telegram botga olib boradi.
