@@ -1,0 +1,63 @@
+# ============================================================
+#  MAXFIY — hech qachon repozitoriyga tushmasin
+# ============================================================
+.env
+.env.*
+!.env.example
+
+# Telegram sessiyalari (akkauntga to'liq kirish huquqi beradi!)
+sessions/*
+!sessions/.gitkeep
+*.session
+*.session-journal
+
+# Ma'lumotlar bazasi (foydalanuvchilar, to'lovlar, parol hashlari)
+data/*
+!data/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Foydalanuvchi yuklagan fayllar
+static/uploads/*
+!static/uploads/.gitkeep
+
+# ============================================================
+#  Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ============================================================
+#  Muharrir va tizim fayllari
+# ============================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+#  Loglar va vaqtinchalik fayllar
+# ============================================================
+*.log
+logs/
+tmp/
+.claude/settings.local.json

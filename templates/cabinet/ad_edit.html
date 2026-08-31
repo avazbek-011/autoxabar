@@ -1,0 +1,101 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Xabarni tahrirlash{% endblock %}
+{% block heading %}Xabarni tahrirlash{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('cabinet.ads') }}" class="btn btn-ghost btn-sm">
+  {{ icon('arrow-left', 15) }} Xabarlar
+</a>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('edit', 19) }} Tahrirlash</div></div>
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label class="label" for="title">Nomi</label>
+        <input class="input" id="title" name="title" value="{{ ad.title }}" maxlength="80">
+      </div>
+
+      <div class="field">
+        <label class="label" for="body">Xabar matni <span class="req">*</span></label>
+        <textarea class="textarea" id="body" name="body" maxlength="4000" required
+                  data-counter="#bodyCount" style="min-height:220px">{{ ad.body }}</textarea>
+        <div class="flex justify-between">
+          <div class="hint">HTML teglari: b, i, u, s, code, a</div>
+          <div class="hint" id="bodyCount"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="media">Rasmni almashtirish</label>
+        <input class="input" id="media" name="media" type="file" accept="image/*">
+      </div>
+
+      {% if ad.media_path %}
+      <label class="check mb">
+        <input type="checkbox" name="remove_media">
+        <span class="box"></span>
+        <span>Mavjud rasmni o‘chirish</span>
+      </label>
+      {% endif %}
+
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" name="is_active" {{ 'checked' if ad.is_active }}>
+          <span class="track"></span>
+          <span><b>Faol</b><div class="xs muted">O‘chirilsa profillarga biriktirib bo‘lmaydi</div></span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary btn-block">{{ icon('check', 18) }} Saqlash</button>
+    </form>
+  </div>
+
+  <div class="grid" style="gap:22px;align-content:start">
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('eye', 19) }} Ko‘rinishi</div></div>
+      {% if ad.media_path %}
+        <img src="{{ url_for('static', filename=ad.media_path.replace('static/', '')) }}"
+             alt="" style="width:100%;border-radius:12px;margin-bottom:14px">
+      {% endif %}
+      <div style="padding:14px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--line);
+                  white-space:pre-wrap;font-size:.92rem;line-height:1.6">{{ ad.body | safe }}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('layers', 19) }} Qayerda ishlatilmoqda</div></div>
+      {% if used_by %}
+        <div class="grid" style="gap:9px">
+          {% for p in used_by %}
+          <a href="{{ url_for('cabinet.profile_detail', profile_id=p.id) }}" class="group-row">
+            <div class="group-ava">{{ (p.title or p.phone)[:2] | upper }}</div>
+            <div class="group-info">
+              <div class="n">{{ p.title or 'Profil' }}</div>
+              <div class="m mono">{{ p.phone | phone }}</div>
+            </div>
+            {{ icon('chevron-right', 16) }}
+          </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="small muted">Bu xabar hech qaysi profilga biriktirilmagan.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('chart', 19) }} Statistika</div></div>
+      <div class="flex justify-between items-center mb small">
+        <span class="muted">Yuborilgan</span><b>{{ ad.sent_count | num }} marta</b>
+      </div>
+      <div class="flex justify-between items-center small">
+        <span class="muted">Yaratilgan</span><b>{{ ad.created_at | date }}</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

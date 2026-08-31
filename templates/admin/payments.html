@@ -1,0 +1,79 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import pay_badge %}
+{% block title %}To‘lovlar{% endblock %}
+{% block heading %}To‘lovlar{% endblock %}
+{% block subheading %}<div class="sub">Jami {{ total | num }} ta yozuv</div>{% endblock %}
+
+{% block content %}
+
+<div class="flex gap-sm wrap">
+  {% set filters = [('', 'Barchasi'), ('paid', 'To‘langan'), ('pending', 'Kutilmoqda'),
+                    ('failed', 'Xato'), ('cancelled', 'Bekor')] %}
+  {% for key, label in filters %}
+    <a href="{{ url_for('admin.payments', status=key) }}"
+       class="btn btn-sm {{ 'btn-primary' if status == key else 'btn-ghost' }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>#</th><th>Sana</th><th>Foydalanuvchi</th><th>Tavsif</th>
+            <th>Usul</th><th class="num">Summa</th><th>Holat</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td class="mono xs muted">{{ p.id }}</td>
+          <td class="xs muted nowrap">{{ p.created_at | dt }}</td>
+          <td>
+            <a href="{{ url_for('admin.user_detail', user_id=p.user_id) }}">
+              {{ p.name or 'Foydalanuvchi' }}
+              <div class="xs muted mono">{{ p.phone | phone }}</div>
+            </a>
+          </td>
+          <td class="small">
+            {{ p.description or 'Obuna' }}
+            {% if p.ptitle %}<div class="xs muted">{{ p.ptitle }}</div>{% endif %}
+          </td>
+          <td class="xs">
+            {% if p.method == 'payme_auto' %}<span class="badge badge-gold">Avto</span>
+            {% elif p.method == 'payme' %}<span class="badge badge-info">Payme</span>
+            {% elif p.method == 'balance' %}<span class="badge badge-muted">Balans</span>
+            {% else %}<span class="badge badge-muted">Qo‘lda</span>{% endif %}
+          </td>
+          <td class="num bold">{{ p.amount | money('') }}</td>
+          <td>{{ pay_badge(p.status) }}</td>
+          <td class="right">
+            {% if p.status in ('pending', 'failed') %}
+            <form method="post" action="{{ url_for('admin.payment_manual', payment_id=p.id) }}"
+                  data-confirm="To‘lov qo‘lda tasdiqlansinmi? Obuna faollashadi va tushum daftarga yoziladi.">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button class="btn btn-ok btn-sm">{{ icon('check', 14) }} Tasdiqlash</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="center muted small" style="padding:36px">To‘lovlar topilmadi</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% for i in range(1, pages + 1) %}
+      {% if i == page %}
+        <span class="current">{{ i }}</span>
+      {% elif i <= 3 or i > pages - 3 or (i - page) | abs <= 2 %}
+        <a href="{{ url_for('admin.payments', status=status, page=i) }}">{{ i }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

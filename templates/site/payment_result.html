@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}To‘lov natijasi — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card center">
+    {% if payment and payment.status == 'paid' %}
+      <div class="empty-ico" style="background:var(--ok-bg);border-color:rgba(52,211,153,.4);color:var(--ok)">
+        {{ icon('check-circle', 30) }}
+      </div>
+      <h2 class="mb">To‘lov qabul qilindi</h2>
+      <p class="muted mb-lg">
+        {{ payment.amount | money }} muvaffaqiyatli to‘landi.
+        Obunangiz faollashtirildi.
+      </p>
+    {% elif payment and payment.status == 'pending' %}
+      <div class="empty-ico" style="background:var(--warn-bg);border-color:rgba(251,191,36,.4);color:var(--warn)">
+        {{ icon('clock', 30) }}
+      </div>
+      <h2 class="mb">To‘lov kutilmoqda</h2>
+      <p class="muted mb-lg">
+        To‘lov hali tasdiqlanmadi. Bir necha daqiqadan so‘ng kabinetdan holatni tekshiring.
+      </p>
+    {% elif payment %}
+      <div class="empty-ico" style="background:var(--danger-bg);border-color:rgba(251,113,133,.4);color:var(--danger)">
+        {{ icon('x-circle', 30) }}
+      </div>
+      <h2 class="mb">To‘lov amalga oshmadi</h2>
+      <p class="muted mb-lg">To‘lov bekor qilindi yoki xatolik yuz berdi. Qaytadan urinib ko‘ring.</p>
+    {% else %}
+      <div class="mark" style="margin:0 auto 18px">{{ logo(62) }}</div>
+      <h2 class="mb">To‘lov ma‘lumoti topilmadi</h2>
+      <p class="muted mb-lg">Kabinetdagi to‘lovlar tarixidan holatni tekshiring.</p>
+    {% endif %}
+
+    <a href="{{ url_for('cabinet.billing') if user else url_for('auth.login_view') }}"
+       class="btn btn-primary btn-block">
+      {{ icon('wallet', 18) }} Kabinetga o‘tish
+    </a>
+  </div>
+</div>
+{% endblock %}

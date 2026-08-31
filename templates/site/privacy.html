@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Maxfiylik siyosati — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:840px">
+    <h1 class="mb">Maxfiylik siyosati</h1>
+    <p class="muted mb-lg">Oxirgi yangilanish: {{ year }}-yil</p>
+
+    <div class="card">
+      <h3 class="mb">1. Qanday ma‘lumot yig‘amiz</h3>
+      <ul class="price-list mb-lg small">
+        <li>Telefon raqami va ism (ro‘yxatdan o‘tishda)</li>
+        <li>Ulangan Telegram akkauntining sessiya kaliti</li>
+        <li>Guruhlar ro‘yxati va yuborish statistikasi</li>
+        <li>To‘lov tarixi (karta raqami saqlanmaydi)</li>
+      </ul>
+
+      <h3 class="mb">2. Telegram sessiyasi haqida</h3>
+      <p class="mb-lg small">
+        Telegram yuborgan kirish kodi faqat sessiya yaratish uchun ishlatiladi va
+        saqlanmaydi. Yaratilgan sessiya kaliti serverda saqlanadi va faqat sizning
+        xabaringizni yuborish uchun ishlatiladi. Profilni o‘chirganingizda sessiya
+        bekor qilinadi va ma‘lumot butunlay yo‘q qilinadi.
+      </p>
+
+      <h3 class="mb">3. To‘lov ma‘lumotlari</h3>
+      <p class="mb-lg small">
+        Karta raqami va CVV bizning serverimizga tushmaydi. To‘lovlar Payme tomonidan
+        qayta ishlanadi; bizda faqat Payme bergan xavfsiz token va kartaning yashirilgan
+        raqami (oxirgi 4 raqam) saqlanadi.
+      </p>
+
+      <h3 class="mb">4. Ma‘lumotlarni uchinchi shaxslarga berish</h3>
+      <p class="mb-lg small">
+        Shaxsiy ma‘lumotlaringiz sotilmaydi va uchinchi shaxslarga berilmaydi.
+        Istisno — qonun talabiga ko‘ra vakolatli organlarning rasmiy so‘rovi.
+      </p>
+
+      <h3 class="mb">5. Sizning huquqlaringiz</h3>
+      <p class="mb-lg small">
+        Istalgan vaqtda ma‘lumotlaringizni ko‘rish, tuzatish yoki butunlay o‘chirishni
+        so‘rashingiz mumkin. Buning uchun {{ cfg.SUPPORT_CONTACT }} manziliga murojaat qiling.
+      </p>
+
+      <h3 class="mb">6. Xavfsizlik</h3>
+      <p class="small">
+        Parollar qaytarib bo‘lmaydigan shaklda (hash) saqlanadi, sessiyalar himoyalangan
+        cookie orqali yuritiladi, barcha o‘zgartiruvchi so‘rovlar CSRF himoyasi bilan
+        tekshiriladi.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Aloqa — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">{{ icon('message', 13) }} Aloqa</span>
+      <h2>Biz bilan <span class="gold">bog‘laning</span></h2>
+      <p class="lead">Savolingiz bormi? Telegram orqali tez javob beramiz.</p>
+    </div>
+
+    <div class="grid g2 gap-lg" style="max-width:760px;margin-inline:auto">
+      <a href="{{ cfg.TELEGRAM_BOT }}" target="_blank" rel="noopener" class="feature card-hover">
+        <div class="feature-ico">{{ icon('message', 23) }}</div>
+        <h4>Qo‘llab-quvvatlash</h4>
+        <p>Texnik savollar va yordam uchun botga yozing.</p>
+      </a>
+      <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="feature card-hover">
+        <div class="feature-ico">{{ icon('telegram', 23) }}</div>
+        <h4>Yangiliklar kanali</h4>
+        <p>Yangilanishlar va texnik ishlar haqida xabarlar.</p>
+      </a>
+    </div>
+
+    <div class="card mt-lg" style="max-width:760px;margin-inline:auto">
+      <div class="card-head"><div class="card-title">{{ icon('clock', 19) }} Ish vaqti</div></div>
+      <p class="small muted">
+        Qo‘llab-quvvatlash har kuni 09:00 dan 22:00 gacha (Toshkent vaqti) ishlaydi.
+        Xizmat esa 24/7 uzluksiz ishlaydi.
+      </p>
+      <div class="divider"></div>
+      <div class="flex gap wrap">
+        <span class="badge badge-gold">{{ icon('user', 13) }} {{ cfg.SUPPORT_CONTACT }}</span>
+        <span class="badge badge-muted">{{ icon('globe', 13) }} O‘zbekiston</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

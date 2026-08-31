@@ -1,0 +1,186 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Tizim holati{% endblock %}
+{% block heading %}Tizim holati{% endblock %}
+
+{% block content %}
+
+<!-- Xizmatlar holati -->
+<div class="grid g4">
+  <div class="stat {{ 'is-ok' if scheduler_running else 'is-danger' }}">
+    <div class="stat-top">
+      <span class="stat-label">Rejalashtiruvchi</span>
+      <span class="stat-ico">{{ icon('clock', 17) }}</span>
+    </div>
+    <div class="stat-value" style="font-size:1.2rem">
+      {{ 'Ishlayapti' if scheduler_running else 'To‘xtagan' }}
+    </div>
+    <div class="stat-sub">{{ jobs | length }} ta vazifa</div>
+  </div>
+
+  <div class="stat {{ 'is-ok' if engine == 'real' else 'is-warn' }}">
+    <div class="stat-top">
+      <span class="stat-label">Telegram dvigateli</span>
+      <span class="stat-ico">{{ icon('telegram', 17) }}</span>
+    </div>
+    <div class="stat-value" style="font-size:1.2rem">{{ engine | upper }}</div>
+    <div class="stat-sub">Telethon: {{ 'bor' if telethon else 'yo‘q' }}</div>
+  </div>
+
+  <div class="stat {{ 'is-ok' if payme_merchant else 'is-warn' }}">
+    <div class="stat-top">
+      <span class="stat-label">Payme Merchant</span>
+      <span class="stat-ico">{{ icon('card', 17) }}</span>
+    </div>
+    <div class="stat-value" style="font-size:1.2rem">
+      {{ 'Sozlangan' if payme_merchant else 'Sozlanmagan' }}
+    </div>
+    <div class="stat-sub">to‘lov qabul qilish</div>
+  </div>
+
+  <div class="stat {{ 'is-ok' if payme_subscribe else 'is-warn' }}">
+    <div class="stat-top">
+      <span class="stat-label">Payme Subscribe</span>
+      <span class="stat-ico">{{ icon('refresh', 17) }}</span>
+    </div>
+    <div class="stat-value" style="font-size:1.2rem">
+      {{ 'Sozlangan' if payme_subscribe else 'Sozlanmagan' }}
+    </div>
+    <div class="stat-sub">avto-to‘lov</div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('link', 19) }} Payme sozlash</div></div>
+    <p class="small muted mb">
+      Payme kabinetida kassa yaratganda quyidagi manzilni «Endpoint URL» maydoniga kiriting:
+    </p>
+    <div class="copy-box mb">
+      <span class="grow">{{ merchant_url }}</span>
+      <button class="btn-icon" data-copy="{{ merchant_url }}">{{ icon('copy', 16) }}</button>
+    </div>
+    <p class="small muted mb">
+      Kassa sozlamalarida <b>payment_id</b> nomli maydon (account field) yaratilishi shart —
+      tizim buyurtmani shu maydon orqali topadi.
+    </p>
+    <div class="alert alert-info">
+      {{ icon('info', 19) }}
+      <div class="small">
+        Kalitlar <span class="mono">.env</span> faylida saqlanadi:
+        <span class="mono">PAYME_MERCHANT_ID</span>, <span class="mono">PAYME_KEY</span>,
+        <span class="mono">PAYME_SUBSCRIBE_ID</span>, <span class="mono">PAYME_SUBSCRIBE_KEY</span>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('power', 19) }} Qo‘lda ishga tushirish</div></div>
+    <div class="grid" style="gap:10px">
+      {% set actions = [
+        ('tick', 'play', 'Yuborish siklini tekshirish', 'Muddati kelgan profillarni darhol ishga tushiradi'),
+        ('counters', 'refresh', 'Hisoblagichlarni yangilash', '24 soatlik va guruh sonlarini qayta hisoblaydi'),
+        ('charge', 'card', 'Avto-to‘lovlarni bajarish', 'Muddati kelgan obunalarni kartadan to‘laydi'),
+        ('expire', 'clock', 'Muddati tugaganlarni yopish', 'Vaqti o‘tgan obunalarni to‘xtatadi'),
+        ('cleanup', 'trash', 'Eski jurnallarni tozalash', '14 kundan eski yozuvlarni o‘chiradi')
+      ] %}
+      {% for act, ico, title, desc in actions %}
+      <form method="post" action="{{ url_for('admin.system_action') }}" class="group-row">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="{{ act }}">
+        <div class="group-ava">{{ icon(ico, 16) }}</div>
+        <div class="group-info">
+          <div class="n">{{ title }}</div>
+          <div class="m">{{ desc }}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm">{{ icon('play', 14) }} Bajarish</button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('database', 19) }} Baza statistikasi</div></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <tbody>
+          {% set labels = {
+            'users': 'Foydalanuvchilar', 'profiles': 'Profillar', 'groups': 'Guruhlar',
+            'ads': 'Xabarlar', 'payments': 'To‘lovlar', 'send_log': 'Jurnal yozuvlari',
+            'cards': 'Bog‘langan kartalar', 'subscriptions': 'Faol obunalar'
+          } %}
+          {% for key, value in counts.items() %}
+          <tr>
+            <td>{{ labels.get(key, key) }}</td>
+            <td class="num bold">{{ value | num }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td>Baza hajmi</td>
+            <td class="num bold">{{ (db_size / 1024 / 1024) | round(2) }} MB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('clock', 19) }} Rejalashtirilgan vazifalar</div></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Vazifa</th><th>Keyingi ishga tushish</th></tr></thead>
+        <tbody>
+          {% for j in jobs %}
+          <tr><td class="mono xs">{{ j.id }}</td><td class="xs muted">{{ j.next }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" class="center muted small" style="padding:26px">
+            Rejalashtiruvchi ishlamayapti
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('alert', 19) }} Oxirgi 24 soat xatolari</div></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Xatolik</th><th class="num">Soni</th></tr></thead>
+        <tbody>
+          {% for e in errors %}
+          <tr><td class="xs">{{ e.error | truncate(70) }}</td><td class="num bold">{{ e.c }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" class="center muted small" style="padding:26px">Xatolik yo‘q — a'lo!</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('list', 19) }} Audit jurnali</div></div>
+    <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Vaqt</th><th>Kim</th><th>Amal</th></tr></thead>
+        <tbody>
+          {% for a in audit_rows %}
+          <tr>
+            <td class="xs muted nowrap">{{ a.created_at | dt }}</td>
+            <td class="xs mono">{{ a.phone | phone if a.phone else '—' }}</td>
+            <td class="xs">{{ a.action }} {{ a.target or '' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="center muted small" style="padding:26px">Yozuvlar yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

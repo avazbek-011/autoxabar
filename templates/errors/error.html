@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}{{ title }} — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card center">
+    <div class="mark" style="margin:0 auto 18px">{{ logo(62) }}</div>
+    <div class="gold" style="font-size:3.4rem;font-weight:900;letter-spacing:-.04em;line-height:1">{{ code }}</div>
+    <h2 class="mt mb">{{ title }}</h2>
+    <p class="muted mb-lg">{{ text }}</p>
+    <a href="{{ url_for('site.index') }}" class="btn btn-primary btn-block">
+      {{ icon('home', 18) }} Bosh sahifaga
+    </a>
+  </div>
+</div>
+{% endblock %}

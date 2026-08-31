@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}Sessiya muddati tugadi — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card center">
+    <div class="mark" style="margin:0 auto 18px">{{ logo(62) }}</div>
+    <h2 class="mb">Sessiya muddati tugadi</h2>
+    <p class="muted mb-lg">
+      Xavfsizlik tekshiruvi o‘tmadi. Sahifani yangilab, amalni qaytadan bajaring.
+    </p>
+    <a href="javascript:history.back()" class="btn btn-primary btn-block">
+      {{ icon('arrow-left', 18) }} Orqaga qaytish
+    </a>
+  </div>
+</div>
+{% endblock %}

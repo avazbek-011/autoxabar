@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}Kirish — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="mark">{{ logo(62) }}</div>
+      <h2>Xush kelibsiz</h2>
+      <p>Hisobingizga kiring va ishni davom ettiring</p>
+    </div>
+
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
+      <div class="field">
+        <label class="label" for="phone">Telefon raqami</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('phone', 17) }}</span>
+          <input class="input" id="phone" name="phone" data-phone inputmode="tel"
+                 value="{{ phone }}" placeholder="+998 90 123 45 67" autocomplete="tel" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Parol</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('lock', 17) }}</span>
+          <input class="input" id="password" name="password" type="password"
+                 placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="ig-btn" data-toggle-pass="password" aria-label="Parolni ko‘rsatish">
+            {{ icon('eye', 17) }}
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mb">
+        <label class="check">
+          <input type="checkbox" name="remember" checked>
+          <span class="box"></span>
+          <span>Meni eslab qol</span>
+        </label>
+        <a href="{{ url_for('auth.reset_view') }}" class="small" style="color:var(--g-300)">
+          Parolni unutdingizmi?
+        </a>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">
+        {{ icon('logout', 18) }} Kirish
+      </button>
+    </form>
+
+    <div class="auth-foot">
+      Hisobingiz yo‘qmi? <a href="{{ url_for('auth.register_view') }}">Ro‘yxatdan o‘ting</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

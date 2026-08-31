@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="VIPADSUZ">
+  <defs>
+    <linearGradient id="vxGold" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#F4D477"/>
+      <stop offset="42%" stop-color="#DCAB1E"/>
+      <stop offset="100%" stop-color="#B07F09"/>
+    </linearGradient>
+    <path id="vxPetal" d="M 66.00 68.00 C 57.00 72.00, 52.00 64.00, 55.00 56.00 C 60.00 38.00, 75.00 17.00, 100.00 7.00 C 125.00 17.00, 140.00 38.00, 145.00 56.00 C 148.00 64.00, 143.00 72.00, 134.00 68.00"/>
+    <path id="vxDropBig" d="M 100.00 22.00 C 106.50 29.20, 112.50 28.12, 112.50 40.00 A 12.50 12.50 0 1 1 87.50 40.00 C 87.50 28.12, 93.50 29.20, 100.00 22.00 Z"/>
+    <path id="vxDropSm" d="M 100.00 54.00 C 104.68 59.60, 109.00 59.45, 109.00 68.00 A 9.00 9.00 0 1 1 91.00 68.00 C 91.00 59.45, 95.32 59.60, 100.00 54.00 Z"/>
+  </defs>
+
+  <g fill="none" stroke="url(#vxGold)" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke-width="6.4">
+      <use href="#vxPetal" transform="rotate(0 100 100)"/>
+      <use href="#vxPetal" transform="rotate(45 100 100)"/>
+      <use href="#vxPetal" transform="rotate(90 100 100)"/>
+      <use href="#vxPetal" transform="rotate(135 100 100)"/>
+      <use href="#vxPetal" transform="rotate(180 100 100)"/>
+      <use href="#vxPetal" transform="rotate(225 100 100)"/>
+      <use href="#vxPetal" transform="rotate(270 100 100)"/>
+      <use href="#vxPetal" transform="rotate(315 100 100)"/>
+    </g>
+    <g stroke-width="6.0">
+      <use href="#vxDropBig" transform="rotate(22.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(67.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(112.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(157.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(202.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(247.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(292.5 100 100)"/>
+      <use href="#vxDropBig" transform="rotate(337.5 100 100)"/>
+    </g>
+    <g stroke-width="5.2">
+      <use href="#vxDropSm" transform="rotate(0 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(45 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(90 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(135 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(180 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(225 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(270 100 100)"/>
+      <use href="#vxDropSm" transform="rotate(315 100 100)"/>
+    </g>
+    <circle cx="100" cy="100" r="12.5" stroke-width="6.0"/>
+  </g>
+  <circle cx="100" cy="100" r="4.6" fill="url(#vxGold)"/>
+</svg>

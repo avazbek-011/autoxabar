@@ -1,0 +1,297 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, plan_badge, empty %}
+{% block title %}{{ profile.title or profile.phone }}{% endblock %}
+{% block heading %}{{ profile.title or 'Profil' }}{% endblock %}
+{% block subheading %}<div class="sub mono">{{ profile.phone | phone }}</div>{% endblock %}
+
+{% block content %}
+
+<div class="flex gap wrap items-center">
+  <a href="{{ url_for('cabinet.profiles') }}" class="btn btn-ghost btn-sm">
+    {{ icon('arrow-left', 15) }} Profillar
+  </a>
+  {{ status_badge(profile.status) }}
+  {{ plan_badge(profile) }}
+  {% if profile.expires_at %}
+    <span class="badge badge-muted">{{ icon('clock', 12) }} {{ profile.expires_at | left }}</span>
+  {% endif %}
+  <div class="grow"></div>
+  <form method="post" action="{{ url_for('cabinet.profile_toggle', profile_id=profile.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="{{ 'stop' if profile.status == 'running' else 'start' }}">
+    <button class="btn {{ 'btn-danger' if profile.status == 'running' else 'btn-primary' }}">
+      {{ icon('pause' if profile.status == 'running' else 'play', 17) }}
+      {{ 'To‘xtatish' if profile.status == 'running' else 'Ishga tushirish' }}
+    </button>
+  </form>
+</div>
+
+{% if profile.status_note %}
+<div class="alert alert-warn">{{ icon('info', 19) }}<div>{{ profile.status_note }}</div></div>
+{% endif %}
+
+<div class="grid g4">
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Jami</span><span class="stat-ico">{{ icon('send', 17) }}</span></div>
+    <div class="stat-value">{{ profile.sent_total | num }}</div>
+  </div>
+  <div class="stat is-info">
+    <div class="stat-top"><span class="stat-label">24 soatda</span><span class="stat-ico">{{ icon('zap', 17) }}</span></div>
+    <div class="stat-value">{{ profile.sent_24h | num }}</div>
+  </div>
+  <div class="stat is-ok">
+    <div class="stat-top"><span class="stat-label">Yoqilgan guruh</span><span class="stat-ico">{{ icon('users', 17) }}</span></div>
+    <div class="stat-value">{{ enabled_count }}</div>
+    <div class="stat-sub">{{ groups | length }} tadan</div>
+  </div>
+  <div class="stat {{ 'is-danger' if profile.failed_total > profile.sent_total * 0.2 else '' }}">
+    <div class="stat-top"><span class="stat-label">Xatolar</span><span class="stat-ico">{{ icon('alert', 17) }}</span></div>
+    <div class="stat-value">{{ profile.failed_total | num }}</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="sozlamalar">Sozlamalar</button>
+  <button class="tab" data-tab="guruhlar">Guruhlar ({{ groups | length }})</button>
+  <button class="tab" data-tab="statistika">Statistika</button>
+  <button class="tab" data-tab="jurnal">Jurnal</button>
+</div>
+
+<!-- ═════════ SOZLAMALAR ═════════ -->
+<div class="tab-panel active" data-panel="sozlamalar">
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('sliders', 19) }} Asosiy sozlamalar</div></div>
+      <form method="post" action="{{ url_for('cabinet.profile_update', profile_id=profile.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="field">
+          <label class="label" for="title">Profil nomi</label>
+          <input class="input" id="title" name="title" value="{{ profile.title }}"
+                 maxlength="60" placeholder="Masalan: Asosiy akkaunt">
+        </div>
+
+        <div class="field">
+          <label class="label" for="ad_id">Faol xabar</label>
+          <select class="select" id="ad_id" name="ad_id">
+            <option value="0">— tanlanmagan —</option>
+            {% for a in ads %}
+              <option value="{{ a.id }}" {{ 'selected' if profile.active_ad_id == a.id }}>
+                {{ a.title }}{% if a.media_path %} (rasm bilan){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          {% if not ads %}
+          <div class="hint">
+            Hali xabar yaratmagansiz.
+            <a href="{{ url_for('cabinet.ads') }}" style="color:var(--g-300)">Xabar qo‘shish</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">Yuborish intervali</label>
+          <div class="segments">
+            {% for m in intervals %}
+              <input type="radio" name="interval" id="int{{ m }}" value="{{ m }}"
+                     {{ 'checked' if profile.interval_min == m }}>
+              <label for="int{{ m }}">{{ m }} daq</label>
+            {% endfor %}
+          </div>
+          <div class="hint">Yangi akkauntlar uchun 10–15 daqiqa xavfsizroq.</div>
+        </div>
+
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" name="smart_rest" {{ 'checked' if profile.smart_rest }}>
+            <span class="track"></span>
+            <span>
+              <b>Aqlli dam olish</b>
+              <div class="xs muted">1 soat ishlagach 3–5 daqiqa tanaffus — ban himoyasi</div>
+            </span>
+          </label>
+        </div>
+
+        <button class="btn btn-primary btn-block">{{ icon('check', 18) }} Saqlash</button>
+      </form>
+    </div>
+
+    <div class="grid" style="gap:22px;align-content:start">
+      <div class="card">
+        <div class="card-head"><div class="card-title">{{ icon('wallet', 19) }} Obuna</div></div>
+        {% if profile.expires_at %}
+          <div class="flex justify-between items-center mb">
+            <span class="muted small">Amal qilish muddati</span>
+            <b>{{ profile.expires_at | date }}</b>
+          </div>
+          <div class="flex justify-between items-center mb">
+            <span class="muted small">Qolgan vaqt</span>
+            <b class="gold">{{ profile.expires_at | left }}</b>
+          </div>
+        {% else %}
+          <p class="small muted mb">Obuna faollashtirilmagan.</p>
+        {% endif %}
+        <div class="flex justify-between items-center mb">
+          <span class="muted small">Avto-to‘lov</span>
+          {% if profile.auto_renew %}
+            <span class="badge badge-ok">Yoqilgan</span>
+          {% else %}
+            <span class="badge badge-muted">O‘chirilgan</span>
+          {% endif %}
+        </div>
+        <a href="{{ url_for('cabinet.billing') }}" class="btn btn-outline btn-block">
+          {{ icon('card', 17) }} To‘lovlarni boshqarish
+        </a>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">{{ icon('telegram', 19) }} Akkaunt</div></div>
+        <div class="flex justify-between items-center mb small">
+          <span class="muted">Telegram ID</span><span class="mono">{{ profile.tg_user_id or '—' }}</span>
+        </div>
+        <div class="flex justify-between items-center mb small">
+          <span class="muted">Username</span>
+          <span class="mono">{{ '@' ~ profile.tg_username if profile.tg_username else '—' }}</span>
+        </div>
+        <div class="flex justify-between items-center mb small">
+          <span class="muted">Ulangan sana</span><span>{{ profile.created_at | date }}</span>
+        </div>
+        <div class="divider"></div>
+        <form method="post" action="{{ url_for('cabinet.profile_delete', profile_id=profile.id) }}"
+              data-confirm="Profil butunlay o‘chiriladi va Telegram sessiyasi bekor qilinadi. Davom etasizmi?">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-danger btn-block btn-sm">{{ icon('trash', 16) }} Profilni o‘chirish</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ GURUHLAR ═════════ -->
+<div class="tab-panel" data-panel="guruhlar" id="guruhlar">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('users', 19) }} Guruhlar</div>
+      <div class="flex gap-sm wrap">
+        <form method="post" action="{{ url_for('cabinet.profile_sync_groups', profile_id=profile.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm">{{ icon('refresh', 15) }} Yangilash</button>
+        </form>
+        <form method="post" action="{{ url_for('cabinet.groups_bulk', profile_id=profile.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="enable_all">
+          <button class="btn btn-ghost btn-sm">{{ icon('check', 15) }} Hammasini yoqish</button>
+        </form>
+        <form method="post" action="{{ url_for('cabinet.groups_bulk', profile_id=profile.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="disable_all">
+          <button class="btn btn-ghost btn-sm">{{ icon('x', 15) }} Hammasini o‘chirish</button>
+        </form>
+        <form method="post" action="{{ url_for('cabinet.groups_bulk', profile_id=profile.id) }}"
+              data-confirm="Bloklangan va o‘chirilgan guruhlar ro‘yxatdan olib tashlansinmi?">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="clean">
+          <button class="btn btn-ghost btn-sm">{{ icon('trash', 15) }} Tozalash</button>
+        </form>
+      </div>
+    </div>
+
+    {% if groups %}
+    <div class="input-group mb">
+      <span class="ig-icon">{{ icon('search', 17) }}</span>
+      <input class="input" data-filter=".group-item" placeholder="Guruh nomi bo‘yicha qidirish...">
+    </div>
+
+    <div class="grid" style="gap:9px">
+      {% for g in groups %}
+      <div class="group-row group-item {{ '' if g.enabled else 'off' }}">
+        <div class="group-ava">{{ (g.title or 'G')[:2] | upper }}</div>
+        <div class="group-info">
+          <div class="n">{{ g.title or 'Nomsiz guruh' }}</div>
+          <div class="m">
+            {{ g.members | num }} a'zo · {{ g.sent_count | num }} yuborildi
+            {% if g.status != 'ok' %} · <span style="color:var(--warn)">{{ g.status }}</span>{% endif %}
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('cabinet.group_toggle', profile_id=profile.id, group_id=g.id) }}"
+              data-no-loading>
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <label class="switch">
+            <input type="checkbox" {{ 'checked' if g.enabled }} onchange="this.form.submit()">
+            <span class="track"></span>
+          </label>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="filter-empty hidden center muted small" style="padding:26px">Hech narsa topilmadi</div>
+    {% else %}
+      {{ empty('users', 'Guruhlar topilmadi',
+               'Telegram akkauntingiz hali hech qaysi guruhga a‘zo emas yoki ro‘yxat hali o‘qilmagan.') }}
+    {% endif %}
+  </div>
+</div>
+
+<!-- ═════════ STATISTIKA ═════════ -->
+<div class="tab-panel" data-panel="statistika">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('chart', 19) }} Oxirgi 14 kun</div>
+    </div>
+    <div class="chart" data-chart='{{ chart | tojson }}' data-type="bar"></div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-head"><div class="card-title">{{ icon('award', 19) }} Eng faol guruhlar</div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Guruh</th><th class="num">A'zolar</th><th class="num">Yuborilgan</th><th>Holat</th></tr></thead>
+        <tbody>
+          {% for g in groups | sort(attribute='sent_count', reverse=true) %}
+            {% if loop.index <= 15 %}
+            <tr>
+              <td>{{ g.title or 'Nomsiz' }}</td>
+              <td class="num">{{ g.members | num }}</td>
+              <td class="num">{{ g.sent_count | num }}</td>
+              <td><span class="badge badge-{{ 'ok' if g.status == 'ok' else 'warn' }}">{{ g.status }}</span></td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ JURNAL ═════════ -->
+<div class="tab-panel" data-panel="jurnal">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('list', 19) }} Yuborish jurnali</div></div>
+    {% if logs %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Vaqt</th><th>Guruh</th><th>Holat</th><th>Izoh</th></tr></thead>
+        <tbody>
+          {% for l in logs %}
+          <tr>
+            <td class="nowrap xs muted">{{ l.created_at | dt }}</td>
+            <td>{{ l.chat_title or '—' }}</td>
+            <td>
+              <span class="badge badge-{{ 'ok' if l.status == 'ok' else 'danger' }}">
+                {{ 'Yuborildi' if l.status == 'ok' else 'Xato' }}
+              </span>
+            </td>
+            <td class="xs muted">{{ l.error or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ empty('list', 'Jurnal bo‘sh', 'Profil ishga tushgach bu yerda har bir yuborish qayd etiladi.') }}
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

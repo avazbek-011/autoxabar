@@ -1,0 +1,165 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, pay_badge, plan_badge %}
+{% block title %}{{ u.name or u.phone }}{% endblock %}
+{% block heading %}{{ u.name or 'Foydalanuvchi' }}{% endblock %}
+{% block subheading %}<div class="sub mono">{{ u.phone | phone }}</div>{% endblock %}
+
+{% block content %}
+
+<div class="flex gap wrap items-center">
+  <a href="{{ url_for('admin.users') }}" class="btn btn-ghost btn-sm">
+    {{ icon('arrow-left', 15) }} Foydalanuvchilar
+  </a>
+  {% if u.role == 'admin' %}<span class="badge badge-gold">Administrator</span>{% endif %}
+  {% if u.status == 'blocked' %}<span class="badge badge-danger">Bloklangan</span>
+  {% else %}<span class="badge badge-ok">Faol</span>{% endif %}
+</div>
+
+<div class="grid g4">
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">To‘lagan</span><span class="stat-ico">{{ icon('coins', 17) }}</span></div>
+    <div class="stat-value gold">{{ paid | money('') }}</div>
+  </div>
+  <div class="stat is-info">
+    <div class="stat-top"><span class="stat-label">Balans</span><span class="stat-ico">{{ icon('wallet', 17) }}</span></div>
+    <div class="stat-value">{{ u.balance | money('') }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Profillar</span><span class="stat-ico">{{ icon('layers', 17) }}</span></div>
+    <div class="stat-value">{{ profiles | length }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Ro‘yxatdan</span><span class="stat-ico">{{ icon('calendar', 17) }}</span></div>
+    <div class="stat-value" style="font-size:1.15rem">{{ u.created_at | date }}</div>
+    <div class="stat-sub">oxirgi kirish: {{ u.last_login_at | ago }}</div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('shield', 19) }} Boshqaruv</div></div>
+
+    <div class="flex gap-sm wrap mb">
+      {% if u.status == 'blocked' %}
+      <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="unblock">
+        <button class="btn btn-ok btn-sm">{{ icon('check', 15) }} Blokni yechish</button>
+      </form>
+      {% else %}
+      <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}"
+            data-confirm="Foydalanuvchi bloklansinmi? Barcha profillari to‘xtaydi.">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="block">
+        <button class="btn btn-danger btn-sm">{{ icon('lock', 15) }} Bloklash</button>
+      </form>
+      {% endif %}
+
+      {% if u.role == 'admin' %}
+      <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}"
+            data-confirm="Administrator huquqi olib tashlansinmi?">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="demote">
+        <button class="btn btn-ghost btn-sm">{{ icon('arrow-down', 15) }} Huquqni olish</button>
+      </form>
+      {% else %}
+      <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}"
+            data-confirm="Administrator huquqi berilsinmi?">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="promote">
+        <button class="btn btn-ghost btn-sm">{{ icon('arrow-up', 15) }} Admin qilish</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}" class="mb">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="balance">
+      <label class="label">Balansni o‘zgartirish (manfiy ham mumkin)</label>
+      <div class="flex gap-sm">
+        <input class="input grow" name="amount" type="number" placeholder="5000" required>
+        <button class="btn btn-primary">{{ icon('plus', 16) }} Qo‘shish</button>
+      </div>
+    </form>
+
+    {% if profiles %}
+    <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}" class="mb">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="gift">
+      <label class="label">Bepul obuna berish</label>
+      <div class="flex gap-sm wrap">
+        <select class="select grow" name="profile_id" style="min-width:160px">
+          {% for p in profiles %}
+            <option value="{{ p.id }}">{{ p.title or p.phone }}</option>
+          {% endfor %}
+        </select>
+        <input class="input" name="days" type="number" value="30" min="1" max="365" style="width:100px">
+        <button class="btn btn-ghost">{{ icon('gift', 16) }} Berish</button>
+      </div>
+    </form>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('admin.user_action', user_id=u.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="note">
+      <label class="label" for="notes">Ichki izoh</label>
+      <textarea class="textarea" id="notes" name="notes" style="min-height:80px">{{ u.notes }}</textarea>
+      <button class="btn btn-ghost btn-block btn-sm mt">{{ icon('check', 15) }} Izohni saqlash</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('layers', 19) }} Profillar</div></div>
+    {% if profiles %}
+    <div class="grid" style="gap:9px">
+      {% for p in profiles %}
+      <div class="group-row">
+        <div class="group-ava">{{ (p.title or p.phone)[:2] | upper }}</div>
+        <div class="group-info">
+          <div class="n">{{ p.title or 'Profil' }}</div>
+          <div class="m mono">{{ p.phone | phone }} · {{ p.groups_count }} guruh</div>
+        </div>
+        <div class="flex col gap-sm" style="align-items:flex-end">
+          {{ status_badge(p.status) }}
+          <span class="xs muted">{{ p.sent_total | compact }} yuborildi</span>
+        </div>
+        <form method="post" action="{{ url_for('admin.profile_action', profile_id=p.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="{{ 'stop' if p.status == 'running' else 'start' }}">
+          <button class="btn-icon">{{ icon('pause' if p.status == 'running' else 'play', 15) }}</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="center muted small" style="padding:26px">Profillar yo‘q</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><div class="card-title">{{ icon('receipt', 19) }} To‘lovlar tarixi</div></div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Sana</th><th>Tavsif</th><th>Usul</th><th class="num">Summa</th><th>Holat</th></tr></thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td class="xs muted nowrap">{{ p.created_at | dt }}</td>
+          <td class="small">{{ p.description or 'Obuna' }}</td>
+          <td class="xs">{{ p.method }}</td>
+          <td class="num bold">{{ p.amount | money('') }}</td>
+          <td>{{ pay_badge(p.status) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="center muted small" style="padding:26px">To‘lovlar yo‘q</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

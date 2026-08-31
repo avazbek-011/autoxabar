@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Narxlar — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">{{ icon('wallet', 13) }} Narxlar</span>
+      <h2>Oddiy va <span class="gold">tushunarli</span> narx</h2>
+      <p class="lead">Bitta Telegram profili — oyiga {{ price | num }} so‘m. Boshqa to‘lov yo‘q.</p>
+    </div>
+
+    <div class="grid g2 gap-lg" style="max-width:840px;margin-inline:auto">
+      <div class="price-card">
+        <div class="price-name">Bepul</div>
+        <div class="price-desc">Xizmatni sinab ko‘rish uchun</div>
+        <div class="price-amount"><span class="n">0</span></div>
+        <div class="price-per">muddatsiz</div>
+        <ul class="price-list">
+          <li>{{ icon('check', 18, 'yes') }} Avtomatik tarqatish</li>
+          <li>{{ icon('check', 18, 'yes') }} Barcha intervallar (2–30 daq)</li>
+          <li>{{ icon('check', 18, 'yes') }} Guruhlarni boshqarish</li>
+          <li>{{ icon('check', 18, 'yes') }} Statistika</li>
+          <li class="off">{{ icon('x', 18, 'no') }} Xabar ostida xizmat reklamasi</li>
+          <li class="off">{{ icon('x', 18, 'no') }} Rasm yuborib bo‘lmaydi</li>
+        </ul>
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-ghost btn-block">Bepul boshlash</a>
+      </div>
+
+      <div class="price-card featured">
+        <span class="price-tag">Eng ommabop</span>
+        <div class="price-name">PRO</div>
+        <div class="price-desc">1 profil / 30 kun</div>
+        <div class="price-amount">
+          <span class="n">{{ price | num }}</span><span class="c">so‘m</span>
+        </div>
+        <div class="price-per">avtomatik uzaytiriladi</div>
+        <ul class="price-list">
+          <li>{{ icon('check', 18, 'yes') }} Bepul rejadagi hamma narsa</li>
+          <li>{{ icon('check', 18, 'yes') }} <b>Reklamasiz</b> — toza xabar</li>
+          <li>{{ icon('check', 18, 'yes') }} Rasm + matn</li>
+          <li>{{ icon('check', 18, 'yes') }} Aqlli dam olish (ban himoyasi)</li>
+          <li>{{ icon('check', 18, 'yes') }} Ustuvor qo‘llab-quvvatlash</li>
+          <li>{{ icon('check', 18, 'yes') }} Payme avto-to‘lov</li>
+        </ul>
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-primary btn-block">
+          {{ icon('rocket', 18) }} PRO ni yoqish
+        </a>
+      </div>
+    </div>
+
+    <div class="card mt-lg" style="max-width:840px;margin-inline:auto">
+      <div class="card-head">
+        <div class="card-title">{{ icon('info', 19) }} Bilib qo‘ying</div>
+      </div>
+      <div class="grid g2">
+        <div>
+          <h4 class="mb">Bir nechta profil</h4>
+          <p class="small muted">
+            Har bir ulangan Telegram akkaunti alohida profil hisoblanadi va har biri uchun
+            alohida {{ price | num }} so‘m to‘lanadi. Masalan, 3 ta akkaunt = oyiga
+            {{ (price * 3) | num }} so‘m.
+          </p>
+        </div>
+        <div>
+          <h4 class="mb">Avto-to‘lov</h4>
+          <p class="small muted">
+            Kartani bir marta bog‘lasangiz, obuna tugashiga yaqin summa avtomatik yechiladi
+            va xizmat uzilmaydi. Avto-to‘lovni istalgan vaqt o‘chirishingiz mumkin.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

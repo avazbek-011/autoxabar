@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}Ro‘yxat yopiq — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card center">
+    <div class="mark" style="margin:0 auto 18px">{{ logo(62) }}</div>
+    <h2 class="mb">Ro‘yxat vaqtincha yopiq</h2>
+    <p class="muted mb-lg">
+      Hozircha yangi foydalanuvchilar qabul qilinmayapti.
+      Ochilishi haqida kanalimizda xabar beramiz.
+    </p>
+    <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="btn btn-primary btn-block">
+      {{ icon('telegram', 18) }} Kanalga obuna bo‘lish
+    </a>
+    <div class="auth-foot">
+      Hisobingiz bormi? <a href="{{ url_for('auth.login_view') }}">Kirish</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

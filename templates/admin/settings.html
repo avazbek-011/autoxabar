@@ -1,0 +1,136 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Sozlamalar{% endblock %}
+{% block heading %}Tizim sozlamalari{% endblock %}
+
+{% block content %}
+
+<form method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('coins', 19) }} Narx va moliya</div></div>
+
+      <div class="field">
+        <label class="label" for="price">Bitta profil narxi (so‘m / 30 kun)</label>
+        <input class="input" id="price" name="price_per_profile" type="number" min="0"
+               value="{{ s.price_per_profile }}" required>
+        <div class="hint">Foydalanuvchi har bir Telegram profili uchun shu summani to‘laydi</div>
+      </div>
+
+      <div class="grid g2">
+        <div class="field">
+          <label class="label" for="tax">Soliq foizi (%)</label>
+          <input class="input" id="tax" name="tax_percent" type="number" step="0.1" min="0" max="100"
+                 value="{{ s.tax_percent }}" required>
+          <div class="hint">Foydadan ajratiladi</div>
+        </div>
+        <div class="field">
+          <label class="label" for="acq">Ekvayring komissiyasi (%)</label>
+          <input class="input" id="acq" name="acquiring_percent" type="number" step="0.1" min="0" max="100"
+                 value="{{ s.acquiring_percent }}" required>
+          <div class="hint">Payme ushlab qoladigan foiz</div>
+        </div>
+      </div>
+
+      <div class="alert alert-gold">
+        {{ icon('info', 19) }}
+        <div class="small">
+          Hisob-kitob: <b>yalpi − ekvayring − soliq = sof foyda</b>.
+          O‘zgartirish faqat yangi to‘lovlarga ta'sir qiladi; eski yozuvlar
+          o‘sha paytdagi foizlar bilan saqlanadi.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label class="label" for="bank_name">Bank / karta nomi</label>
+        <input class="input" id="bank_name" name="bank_name" value="{{ s.bank_name }}"
+               placeholder="Masalan: Kapitalbank">
+      </div>
+      <div class="field">
+        <label class="label" for="bank_account">Hisob raqami / karta</label>
+        <input class="input mono" id="bank_account" name="bank_account" value="{{ s.bank_account }}"
+               placeholder="8600 **** **** 1234">
+        <div class="hint">Moliya bo‘limida yechib olishda ko‘rsatiladi</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('sliders', 19) }} Xizmat sozlamalari</div></div>
+
+      <div class="grid g2">
+        <div class="field">
+          <label class="label" for="trial">Sinov kunlari</label>
+          <input class="input" id="trial" name="trial_days" type="number" min="0" max="90"
+                 value="{{ s.trial_days }}">
+          <div class="hint">Yangi profil uchun bepul</div>
+        </div>
+        <div class="field">
+          <label class="label" for="maxp">Maks. profil / foydalanuvchi</label>
+          <input class="input" id="maxp" name="max_profiles_per_user" type="number" min="1" max="500"
+                 value="{{ s.max_profiles_per_user }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" name="registration_open" {{ 'checked' if s.registration_open == '1' }}>
+          <span class="track"></span>
+          <span><b>Ro‘yxatdan o‘tish ochiq</b>
+            <div class="xs muted">O‘chirilsa yangi foydalanuvchilar qabul qilinmaydi</div></span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" name="free_plan_enabled" {{ 'checked' if s.free_plan_enabled == '1' }}>
+          <span class="track"></span>
+          <span><b>Bepul reja yoqilgan</b>
+            <div class="xs muted">Reklama qo‘shilgan holda bepul ishlash imkoni</div></span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" name="site_open" {{ 'checked' if s.site_open == '1' }}>
+          <span class="track"></span>
+          <span><b>Sayt ochiq</b>
+            <div class="xs muted">Texnik ishlar uchun vaqtincha yopish</div></span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="label" for="tgmode">Telegram rejimi</label>
+        <select class="select" id="tgmode" name="telegram_engine">
+          <option value="auto" {{ 'selected' if s.telegram_engine == 'auto' }}>
+            Avtomatik — kalitlar bo‘lsa haqiqiy
+          </option>
+          <option value="real" {{ 'selected' if s.telegram_engine == 'real' }}>
+            Faqat haqiqiy — guruhlarga chindan yuboriladi
+          </option>
+          <option value="demo" {{ 'selected' if s.telegram_engine == 'demo' }}>
+            DEMO — sinov uchun, haqiqiy xabar yuborilmaydi
+          </option>
+        </select>
+        <div class="hint">
+          Hozirgi holat: <b>{{ engine | upper }}</b>.
+          Telegram raqamni vaqtincha chekagan bo‘lsa, DEMO ga o‘tib saytni
+          sinashda davom etishingiz mumkin.
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="announce">E'lon matni (kabinetda ko‘rinadi)</label>
+        <textarea class="textarea" id="announce" name="announce" maxlength="500"
+                  style="min-height:90px">{{ s.announce }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-lg mt">{{ icon('check', 18) }} Barcha sozlamalarni saqlash</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import pay_badge, plan_badge, empty %}
+{% block title %}Obuna va to‘lovlar{% endblock %}
+{% block heading %}Obuna va to‘lovlar{% endblock %}
+{% block subheading %}<div class="sub">1 profil = {{ price | num }} so‘m / 30 kun</div>{% endblock %}
+
+{% block content %}
+
+<div class="grid g3">
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Oylik to‘lov</span><span class="stat-ico">{{ icon('coins', 17) }}</span></div>
+    <div class="stat-value">{{ monthly | money('') }}</div>
+    <div class="stat-sub">so‘m / oy (avto-to‘lov yoqilganlar)</div>
+  </div>
+  <div class="stat is-info">
+    <div class="stat-top"><span class="stat-label">Balans</span><span class="stat-ico">{{ icon('wallet', 17) }}</span></div>
+    <div class="stat-value">{{ user.balance | money('') }}</div>
+    <div class="stat-sub">so‘m</div>
+  </div>
+  <div class="stat {{ 'is-ok' if cards else 'is-warn' }}">
+    <div class="stat-top"><span class="stat-label">Bog‘langan karta</span><span class="stat-ico">{{ icon('card', 17) }}</span></div>
+    <div class="stat-value">{{ cards | length }}</div>
+    <div class="stat-sub">{{ 'avto-to‘lov tayyor' if cards else 'karta qo‘shilmagan' }}</div>
+  </div>
+</div>
+
+{% if not payme_ready %}
+<div class="alert alert-warn">
+  {{ icon('alert', 19) }}
+  <div><b>To‘lov tizimi sozlanmagan.</b> Administrator Payme kalitlarini kiritishi kerak.</div>
+</div>
+{% endif %}
+
+<div class="tabs">
+  <button class="tab active" data-tab="obunalar">Obunalar</button>
+  <button class="tab" data-tab="kartalar">Kartalar</button>
+  <button class="tab" data-tab="tarix">To‘lovlar tarixi</button>
+</div>
+
+<!-- ═════════ OBUNALAR ═════════ -->
+<div class="tab-panel active" data-panel="obunalar">
+  {% if profiles %}
+  <div class="grid g-auto">
+    {% for p in profiles %}
+    <div class="card">
+      <div class="card-head" style="margin-bottom:14px">
+        <div class="card-title" style="font-size:.96rem">
+          {{ p.title or 'Profil' }}
+        </div>
+        {{ plan_badge(p) }}
+      </div>
+      <div class="xs muted mono mb">{{ p.phone | phone }}</div>
+
+      <div class="flex justify-between items-center mb small">
+        <span class="muted">Muddat</span>
+        <b>{{ p.expires_at | date if p.expires_at else '—' }}</b>
+      </div>
+      <div class="flex justify-between items-center mb small">
+        <span class="muted">Qolgan</span>
+        <b class="{{ 'gold' if p.expires_at }}">{{ p.expires_at | left if p.expires_at else '—' }}</b>
+      </div>
+
+      <div class="divider"></div>
+
+      <form method="post" action="{{ url_for('cabinet.auto_renew_toggle') }}" data-no-loading class="mb">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="profile_id" value="{{ p.id }}">
+        <input type="hidden" name="on" value="{{ '0' if p.auto_renew else '1' }}">
+        <label class="switch" style="width:100%">
+          <input type="checkbox" {{ 'checked' if p.auto_renew }}
+                 {{ 'disabled' if not cards }} onchange="this.form.submit()">
+          <span class="track"></span>
+          <span class="grow">
+            <b>Avto-to‘lov</b>
+            <div class="xs muted">
+              {% if not cards %}Avval kartani qo‘shing
+              {% elif p.auto_renew %}Har 30 kunda {{ price | num }} so‘m yechiladi
+              {% else %}O‘chirilgan — qo‘lda to‘laysiz{% endif %}
+            </div>
+          </span>
+        </label>
+      </form>
+
+      <div class="flex gap-sm">
+        <form method="post" action="{{ url_for('cabinet.payment_create') }}" class="grow">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="profile_id" value="{{ p.id }}">
+          <button class="btn btn-primary btn-sm btn-block" {{ 'disabled' if not payme_ready }}>
+            {{ icon('card', 15) }} {{ price | num }} so‘m to‘lash
+          </button>
+        </form>
+        {% if user.balance >= price %}
+        <form method="post" action="{{ url_for('cabinet.pay_from_balance') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="profile_id" value="{{ p.id }}">
+          <button class="btn btn-ghost btn-sm">{{ icon('wallet', 15) }} Balansdan</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    {{ empty('layers', 'Profil yo‘q', 'Obuna sotib olish uchun avval Telegram profilini ulang.',
+             url_for('cabinet.profiles'), 'Profil qo‘shish') }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═════════ KARTALAR ═════════ -->
+<div class="tab-panel" data-panel="kartalar" id="kartalar">
+  {% if card_pending %}
+  <div class="card card-accent">
+    <div class="card-head">
+      <div class="card-title">{{ icon('lock', 19) }} Kartani tasdiqlash</div>
+      <form method="post" action="{{ url_for('cabinet.card_cancel') }}" data-no-loading>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm">{{ icon('x', 15) }} Bekor qilish</button>
+      </form>
+    </div>
+    <p class="center muted small mb-lg">
+      <b>{{ card_pending.masked }}</b> kartasiga bog‘langan
+      {{ card_pending.phone }} raqamiga SMS kod yuborildi.
+    </p>
+    <form method="post" action="{{ url_for('cabinet.card_verify') }}" style="max-width:340px;margin-inline:auto">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="otp" data-autosubmit="off">
+        {% for i in range(6) %}<input name="code" inputmode="numeric" maxlength="1"
+               autocomplete="one-time-code" pattern="[0-9]*" required>{% endfor %}
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt">{{ icon('check', 18) }} Tasdiqlash</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('plus', 19) }} Karta qo‘shish</div></div>
+
+    {% if not subscribe_ready %}
+      <div class="alert alert-warn mb">
+        {{ icon('alert', 19) }}
+        <div>Avto-to‘lov tizimi hali sozlanmagan. Hozircha to‘lovni qo‘lda amalga oshiring.</div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('cabinet.card_add') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="grid g2">
+        <div class="field">
+          <label class="label" for="number">Karta raqami</label>
+          <div class="input-group">
+            <span class="ig-icon">{{ icon('card', 17) }}</span>
+            <input class="input mono" id="number" name="number" data-card inputmode="numeric"
+                   placeholder="8600 0000 0000 0000" required {{ 'disabled' if not subscribe_ready }}>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="expire">Amal qilish muddati</label>
+          <div class="input-group">
+            <span class="ig-icon">{{ icon('calendar', 17) }}</span>
+            <input class="input mono" id="expire" name="expire" data-expire inputmode="numeric"
+                   placeholder="OO/YY" required {{ 'disabled' if not subscribe_ready }}>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" {{ 'disabled' if not subscribe_ready }}>
+        {{ icon('shield', 18) }} Kartani bog‘lash
+      </button>
+    </form>
+
+    <div class="alert alert-info mt">
+      {{ icon('shield', 19) }}
+      <div class="small">
+        Karta ma'lumotlari bizning serverimizda saqlanmaydi. To‘lovlar <b>Payme</b> tomonidan
+        qayta ishlanadi — bizda faqat xavfsiz token va oxirgi 4 raqam qoladi.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if cards %}
+  <div class="grid g-auto mt">
+    {% for c in cards %}
+    <div class="card card-pad-sm">
+      <div class="flex items-center gap mb">
+        <div class="stat-ico">{{ icon('card', 17) }}</div>
+        <div class="grow">
+          <div class="bold mono">{{ c.number_masked }}</div>
+          <div class="xs muted">{{ c.expire[:2] }}/{{ c.expire[2:] }}</div>
+        </div>
+        {% if c.is_default %}<span class="badge badge-gold">Asosiy</span>{% endif %}
+      </div>
+      <div class="flex gap-sm">
+        {% if not c.is_default %}
+        <form method="post" action="{{ url_for('cabinet.card_default', card_id=c.id) }}" class="grow">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm btn-block">{{ icon('check', 15) }} Asosiy qilish</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('cabinet.card_delete', card_id=c.id) }}"
+              data-confirm="Karta o‘chirilsinmi? Unga bog‘langan avto-to‘lovlar to‘xtaydi."
+              class="{{ 'grow' if c.is_default }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-danger btn-sm btn-block">{{ icon('trash', 15) }} O‘chirish</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═════════ TARIX ═════════ -->
+<div class="tab-panel" data-panel="tarix">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('receipt', 19) }} To‘lovlar tarixi</div></div>
+    {% if payments %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Sana</th><th>Tavsif</th><th>Usul</th><th class="num">Summa</th><th>Holat</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td class="nowrap xs muted">{{ p.created_at | dt }}</td>
+            <td>
+              {{ p.description or 'Obuna' }}
+              {% if p.ptitle %}<div class="xs muted">{{ p.ptitle }}</div>{% endif %}
+            </td>
+            <td class="xs">
+              {% if p.method == 'payme_auto' %}Avto-to‘lov
+              {% elif p.method == 'payme' %}Payme
+              {% elif p.method == 'balance' %}Balans
+              {% else %}Qo‘lda{% endif %}
+            </td>
+            <td class="num bold">{{ p.amount | money('') }}</td>
+            <td>{{ pay_badge(p.status) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ empty('receipt', 'To‘lovlar yo‘q', 'Birinchi to‘lovingizdan keyin bu yerda tarix ko‘rinadi.') }}
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

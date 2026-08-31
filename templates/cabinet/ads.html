@@ -1,0 +1,88 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import empty %}
+{% block title %}Xabarlar{% endblock %}
+{% block heading %}Xabarlar{% endblock %}
+{% block subheading %}<div class="sub">Guruhlarga yuboriladigan e'lonlaringiz</div>{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-head"><div class="card-title">{{ icon('plus', 19) }} Yangi xabar</div></div>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label class="label" for="title">Nomi (faqat siz ko‘rasiz)</label>
+      <input class="input" id="title" name="title" maxlength="80" placeholder="Masalan: Kvartira e'loni">
+    </div>
+
+    <div class="field">
+      <label class="label" for="body">Xabar matni <span class="req">*</span></label>
+      <textarea class="textarea" id="body" name="body" maxlength="4000" required
+                data-counter="#bodyCount"
+                placeholder="Xabaringizni yozing...&#10;&#10;Formatlash: <b>qalin</b>, <i>kursiv</i>, <u>tagi chizilgan</u>, <s>chizilgan</s>, <code>kod</code>, <a href='https://...'>havola</a>"></textarea>
+      <div class="flex justify-between">
+        <div class="hint">HTML teglari: b, i, u, s, code, a</div>
+        <div class="hint" id="bodyCount">0 / 4000</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="media">Rasm (ixtiyoriy, faqat PRO)</label>
+      <input class="input" id="media" name="media" type="file" accept="image/*">
+      <div class="hint">JPG, PNG, WEBP yoki GIF. 16 MB gacha.</div>
+    </div>
+
+    <button class="btn btn-primary">{{ icon('check', 18) }} Xabarni saqlash</button>
+  </form>
+</div>
+
+{% if ads %}
+<div class="grid g-auto">
+  {% for a in ads %}
+  <div class="card card-hover">
+    <div class="card-head" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:.96rem">{{ a.title }}</div>
+      {% if a.is_active %}
+        <span class="badge badge-ok">Faol</span>
+      {% else %}
+        <span class="badge badge-muted">O‘chirilgan</span>
+      {% endif %}
+    </div>
+
+    {% if a.media_path %}
+      <img src="{{ url_for('static', filename=a.media_path.replace('static/', '')) }}"
+           alt="" style="width:100%;height:150px;object-fit:cover;border-radius:12px;margin-bottom:14px">
+    {% endif %}
+
+    <p class="small" style="white-space:pre-wrap;max-height:120px;overflow:hidden;color:var(--ink-2)">{{ a.body | striptags | truncate(220) }}</p>
+
+    <div class="divider"></div>
+
+    <div class="flex justify-between items-center mb">
+      <span class="xs muted">{{ a.sent_count | num }} marta yuborilgan</span>
+      <span class="xs muted">{{ a.used_by }} ta profilda</span>
+    </div>
+
+    <div class="flex gap-sm">
+      <a href="{{ url_for('cabinet.ad_edit', ad_id=a.id) }}" class="btn btn-ghost btn-sm grow">
+        {{ icon('edit', 15) }} Tahrirlash
+      </a>
+      <form method="post" action="{{ url_for('cabinet.ad_delete', ad_id=a.id) }}"
+            data-confirm="Xabar o‘chirilsinmi? Undan foydalanayotgan profillar to‘xtaydi.">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-danger btn-sm">{{ icon('trash', 15) }}</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  {{ empty('megaphone', 'Hali xabar yo‘q',
+           'Birinchi xabaringizni yuqoridagi shakl orqali yarating — keyin uni profilga biriktirasiz.') }}
+</div>
+{% endif %}
+
+{% endblock %}

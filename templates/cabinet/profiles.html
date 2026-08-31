@@ -1,0 +1,147 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, plan_badge, empty %}
+{% block title %}Profillar{% endblock %}
+{% block heading %}Profillar{% endblock %}
+{% block subheading %}<div class="sub">{{ profiles | length }} / {{ limit }} ta profil ishlatilgan</div>{% endblock %}
+
+{% block content %}
+
+{% if demo %}
+<div class="alert alert-warn">
+  {{ icon('alert', 19) }}
+  <div>
+    <b>DEMO rejim.</b> Telegram API kalitlari sozlanmagani uchun tizim namoyish rejimida
+    ishlayapti: haqiqiy xabar yuborilmaydi. Tasdiqlash kodi sifatida <b>12345</b> ni kiriting.
+    Haqiqiy rejim uchun <span class="mono">.env</span> faylida
+    <span class="mono">TELEGRAM_API_ID</span> va <span class="mono">TELEGRAM_API_HASH</span> ni to‘ldiring.
+  </div>
+</div>
+{% endif %}
+
+{% if connect %}
+  <div class="card card-accent">
+    <div class="card-head">
+      <div class="card-title">{{ icon('telegram', 19) }} Akkauntni ulash</div>
+      <form method="post" action="{{ url_for('cabinet.profile_connect_cancel') }}" data-no-loading>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm">{{ icon('x', 15) }} Bekor qilish</button>
+      </form>
+    </div>
+
+    <div class="stepper">
+      <span class="s done">1</span><span class="l"></span>
+      <span class="s {{ 'done' if connect.stage == 'password' else 'on' }}">2</span><span class="l"></span>
+      <span class="s {{ 'on' if connect.stage == 'password' else '' }}">3</span>
+    </div>
+
+    {% if connect.stage == 'code' %}
+    <p class="center muted small mb-lg">
+      <b>{{ connect.phone | phone }}</b> raqamiga Telegram orqali kod yuborildi.
+      Kodni Telegram ilovasidagi «Telegram» chatidan oling.
+    </p>
+    <form method="post" action="{{ url_for('cabinet.profile_code') }}" style="max-width:340px;margin-inline:auto">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="otp" data-autosubmit="off">
+        {% for i in range(5) %}<input name="code" inputmode="numeric" maxlength="1"
+               autocomplete="one-time-code" pattern="[0-9]*" required>{% endfor %}
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt">{{ icon('check', 18) }} Tasdiqlash</button>
+    </form>
+    {% else %}
+    <p class="center muted small mb-lg">
+      Akkauntda ikki bosqichli tasdiqlash yoqilgan. Telegram parolingizni kiriting.
+    </p>
+    <form method="post" action="{{ url_for('cabinet.profile_password') }}" style="max-width:340px;margin-inline:auto">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="input-group">
+        <span class="ig-icon">{{ icon('lock', 17) }}</span>
+        <input class="input" id="tgpass" name="password" type="password"
+               placeholder="Telegram 2FA paroli" required autofocus>
+        <button type="button" class="ig-btn" data-toggle-pass="tgpass">{{ icon('eye', 17) }}</button>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt">{{ icon('check', 18) }} Davom etish</button>
+    </form>
+    {% endif %}
+  </div>
+{% elif can_add %}
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('plus', 19) }} Yangi profil ulash</div>
+    </div>
+    <form method="post" action="{{ url_for('cabinet.profile_connect') }}" class="flex gap wrap items-center">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="input-group grow" style="min-width:260px">
+        <span class="ig-icon">{{ icon('phone', 17) }}</span>
+        <input class="input" name="phone" data-phone inputmode="tel"
+               placeholder="Telegram akkaunt raqami" required>
+      </div>
+      <button class="btn btn-primary">{{ icon('telegram', 18) }} Kod yuborish</button>
+    </form>
+    <p class="hint">
+      Telegram ilovangizga 5 xonali kod keladi. Kod faqat sessiya yaratish uchun ishlatiladi
+      va saqlanmaydi.
+    </p>
+  </div>
+{% else %}
+  <div class="alert alert-warn">
+    {{ icon('alert', 19) }}
+    <div>Profillar chegarasiga yetdingiz ({{ limit }} ta). Yangi qo‘shish uchun eskisini o‘chiring.</div>
+  </div>
+{% endif %}
+
+{% if profiles %}
+<div class="grid g-auto">
+  {% for p in profiles %}
+  <div class="profile-card {{ 'running' if p.status == 'running' }}">
+    <div class="profile-head">
+      <div class="profile-ava">{{ (p.title or p.phone)[:2] | upper }}</div>
+      <div class="profile-meta">
+        <div class="n">{{ p.title or 'Profil' }}</div>
+        <div class="p">{{ p.phone | phone }}</div>
+      </div>
+      <div class="flex col gap-sm" style="align-items:flex-end">
+        {{ status_badge(p.status) }}
+        {{ plan_badge(p) }}
+      </div>
+    </div>
+
+    {% if p.status_note %}
+    <div class="xs muted" style="padding:0 20px 12px">{{ p.status_note }}</div>
+    {% endif %}
+
+    <div class="profile-stats">
+      <div><div class="v">{{ p.groups_count }}</div><div class="k">Guruh</div></div>
+      <div><div class="v">{{ p.sent_24h | num }}</div><div class="k">24 soat</div></div>
+      <div><div class="v">{{ p.interval_min }}</div><div class="k">Daqiqa</div></div>
+    </div>
+
+    <div style="padding:12px 20px 0" class="xs muted">
+      {% if p.expires_at %}
+        {{ icon('clock', 13) }} Obuna: {{ p.expires_at | date }} ({{ p.expires_at | left }})
+      {% else %}
+        {{ icon('info', 13) }} Obuna faollashtirilmagan
+      {% endif %}
+      {% if p.ad_title %}<br>{{ icon('megaphone', 13) }} Xabar: {{ p.ad_title }}{% endif %}
+    </div>
+
+    <div class="profile-foot">
+      <a href="{{ url_for('cabinet.profile_detail', profile_id=p.id) }}" class="btn btn-ghost btn-sm grow">
+        {{ icon('sliders', 15) }} Sozlash
+      </a>
+      <form method="post" action="{{ url_for('cabinet.profile_toggle', profile_id=p.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="back" value="list">
+        <input type="hidden" name="action" value="{{ 'stop' if p.status == 'running' else 'start' }}">
+        <button class="btn btn-sm {{ 'btn-danger' if p.status == 'running' else 'btn-ok' }}">
+          {{ icon('pause' if p.status == 'running' else 'play', 15) }}
+          {{ 'To‘xtatish' if p.status == 'running' else 'Boshlash' }}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

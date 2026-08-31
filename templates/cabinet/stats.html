@@ -1,0 +1,98 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge %}
+{% block title %}Statistika{% endblock %}
+{% block heading %}Statistika{% endblock %}
+{% block subheading %}<div class="sub">Oxirgi {{ days }} kunlik natijalar</div>{% endblock %}
+
+{% block content %}
+
+<div class="flex gap-sm wrap">
+  {% for d in [7, 14, 30, 60, 90] %}
+    <a href="{{ url_for('cabinet.stats', days=d) }}"
+       class="btn btn-sm {{ 'btn-primary' if days == d else 'btn-ghost' }}">{{ d }} kun</a>
+  {% endfor %}
+</div>
+
+<div class="grid g4">
+  <div class="stat is-ok">
+    <div class="stat-top"><span class="stat-label">Yuborilgan</span><span class="stat-ico">{{ icon('send', 17) }}</span></div>
+    <div class="stat-value">{{ total_sent | num }}</div>
+  </div>
+  <div class="stat is-danger">
+    <div class="stat-top"><span class="stat-label">Xatolar</span><span class="stat-ico">{{ icon('alert', 17) }}</span></div>
+    <div class="stat-value">{{ total_failed | num }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Muvaffaqiyat</span><span class="stat-ico">{{ icon('target', 17) }}</span></div>
+    <div class="stat-value">{{ success_rate }}%</div>
+    <div class="progress mt" style="height:6px">
+      <span style="width:{{ success_rate }}%"></span>
+    </div>
+  </div>
+  <div class="stat is-info">
+    <div class="stat-top"><span class="stat-label">Kunlik o‘rtacha</span><span class="stat-ico">{{ icon('activity', 17) }}</span></div>
+    <div class="stat-value">{{ (total_sent // days) | num }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">{{ icon('chart', 19) }} Kunlik dinamika</div>
+    <span class="legend"><i style="background:var(--g-400)"></i> Yuborilgan xabarlar</span>
+  </div>
+  <div class="chart" data-chart='{{ chart | tojson }}' data-type="line"></div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('layers', 19) }} Profillar kesimida</div></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Profil</th><th class="num">24s</th><th class="num">Jami</th><th>Holat</th></tr></thead>
+        <tbody>
+          {% for p in per_profile %}
+          <tr>
+            <td>
+              <a href="{{ url_for('cabinet.profile_detail', profile_id=p.id) }}">
+                <b>{{ p.title or 'Profil' }}</b>
+                <div class="xs muted mono">{{ p.phone | phone }}</div>
+              </a>
+            </td>
+            <td class="num">{{ p.sent_24h | num }}</td>
+            <td class="num">{{ p.sent_total | num }}</td>
+            <td>{{ status_badge(p.status) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="center muted small" style="padding:26px">Ma'lumot yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('award', 19) }} Eng faol guruhlar</div></div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Guruh</th><th class="num">A'zolar</th><th class="num">Yuborildi</th></tr></thead>
+        <tbody>
+          {% for g in top_groups %}
+          <tr>
+            <td>
+              {{ g.title or 'Nomsiz' }}
+              <div class="xs muted">{{ g.ptitle or '' }}</div>
+            </td>
+            <td class="num">{{ g.members | num }}</td>
+            <td class="num">{{ g.sent_count | num }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="center muted small" style="padding:26px">Ma'lumot yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

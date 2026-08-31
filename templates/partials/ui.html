@@ -1,0 +1,44 @@
+{#- Umumiy UI makroslari -#}
+{% from 'partials/icons.html' import icon %}
+
+{%- set STATUS = {
+  'running':   ('ok',     'Ishlayapti'),
+  'connected': ('info',   'Ulangan'),
+  'paused':    ('muted',  'To‘xtatilgan'),
+  'pending':   ('warn',   'Kutilmoqda'),
+  'expired':   ('warn',   'Muddati tugagan'),
+  'error':     ('danger', 'Xatolik'),
+  'banned':    ('danger', 'Bloklangan')
+} -%}
+
+{%- macro status_badge(status) -%}
+  {%- set s = STATUS.get(status, ('muted', status)) -%}
+  <span class="badge badge-{{ s[0] }}">
+    <span class="dot {{ 'dot-live' if status == 'running' }}"></span>{{ s[1] }}
+  </span>
+{%- endmacro -%}
+
+{%- macro plan_badge(profile) -%}
+  {%- if profile.plan == 'pro' -%}
+    <span class="badge badge-gold">{{ icon('star', 12) }} PRO</span>
+  {%- else -%}
+    <span class="badge badge-muted">Bepul</span>
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro pay_badge(status) -%}
+  {%- if status == 'paid' -%}<span class="badge badge-ok">To‘langan</span>
+  {%- elif status == 'pending' -%}<span class="badge badge-warn">Kutilmoqda</span>
+  {%- elif status == 'failed' -%}<span class="badge badge-danger">Xato</span>
+  {%- else -%}<span class="badge badge-muted">Bekor</span>
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro empty(ico, title, text, action_url=None, action_text=None) -%}
+<div class="empty">
+  <div class="empty-ico">{{ icon(ico, 30) }}</div>
+  <h4>{{ title }}</h4>
+  <p>{{ text }}</p>
+  {% if action_url %}<a href="{{ action_url }}" class="btn btn-primary">{{ action_text }}</a>{% endif %}
+</div>
+{%- endmacro -%}

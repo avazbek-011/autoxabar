@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}Ro‘yxatdan o‘tish — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="mark">{{ logo(62) }}</div>
+      <h2>Hisob yarating</h2>
+      <p>Birinchi profilingiz uchun sinov muddati bepul</p>
+    </div>
+
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label class="label" for="name">Ismingiz</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('user', 17) }}</span>
+          <input class="input" id="name" name="name" value="{{ name }}"
+                 placeholder="Ismingiz" autocomplete="name">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="phone">Telefon raqami <span class="req">*</span></label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('phone', 17) }}</span>
+          <input class="input" id="phone" name="phone" data-phone inputmode="tel"
+                 value="{{ phone }}" placeholder="+998 90 123 45 67" autocomplete="tel" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Parol <span class="req">*</span></label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('lock', 17) }}</span>
+          <input class="input" id="password" name="password" type="password"
+                 placeholder="Kamida 6 ta belgi" autocomplete="new-password" minlength="6" required>
+          <button type="button" class="ig-btn" data-toggle-pass="password" aria-label="Parolni ko‘rsatish">
+            {{ icon('eye', 17) }}
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password2">Parolni takrorlang <span class="req">*</span></label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('lock', 17) }}</span>
+          <input class="input" id="password2" name="password2" type="password"
+                 placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+        </div>
+      </div>
+
+      {% if ref %}
+      <div class="field">
+        <label class="label" for="ref">Taklif kodi</label>
+        <input class="input" id="ref" name="ref" value="{{ ref }}" readonly>
+      </div>
+      {% else %}
+      <input type="hidden" name="ref" value="">
+      {% endif %}
+
+      <label class="check mb">
+        <input type="checkbox" name="agree" required>
+        <span class="box"></span>
+        <span>
+          <a href="{{ url_for('site.offer') }}" target="_blank" style="color:var(--g-300)">Ommaviy oferta</a>
+          va
+          <a href="{{ url_for('site.privacy') }}" target="_blank" style="color:var(--g-300)">maxfiylik siyosati</a>
+          shartlarini qabul qilaman
+        </span>
+      </label>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">
+        {{ icon('rocket', 18) }} Ro‘yxatdan o‘tish
+      </button>
+    </form>
+
+    <div class="auth-foot">
+      Hisobingiz bormi? <a href="{{ url_for('auth.login_view') }}">Kirish</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

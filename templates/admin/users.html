@@ -1,0 +1,77 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Foydalanuvchilar{% endblock %}
+{% block heading %}Foydalanuvchilar{% endblock %}
+{% block subheading %}<div class="sub">Jami {{ total | num }} ta</div>{% endblock %}
+
+{% block content %}
+
+<form method="get" class="card card-pad-sm">
+  <div class="flex gap items-center wrap">
+    <div class="input-group grow" style="min-width:240px">
+      <span class="ig-icon">{{ icon('search', 17) }}</span>
+      <input class="input" name="q" value="{{ q }}" placeholder="Telefon yoki ism bo‘yicha qidirish...">
+    </div>
+    <button class="btn btn-primary">{{ icon('search', 17) }} Qidirish</button>
+    {% if q %}<a href="{{ url_for('admin.users') }}" class="btn btn-ghost">{{ icon('x', 17) }} Tozalash</a>{% endif %}
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>#</th><th>Foydalanuvchi</th><th class="num">Profil</th>
+            <th class="num">To‘lagan</th><th class="num">Balans</th>
+            <th>Ro‘yxatdan</th><th>Holat</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="mono xs muted">{{ u.id }}</td>
+          <td>
+            <div class="flex items-center gap">
+              <span class="avatar" style="width:30px;height:30px;font-size:.75rem">
+                {{ (u.name or u.phone)[-2:] | upper }}
+              </span>
+              <div>
+                <b>{{ u.name or 'Foydalanuvchi' }}</b>
+                <div class="xs muted mono">{{ u.phone | phone }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">{{ u.profiles }}</td>
+          <td class="num bold gold">{{ u.paid | money('') }}</td>
+          <td class="num">{{ u.balance | money('') }}</td>
+          <td class="xs muted nowrap">{{ u.created_at | date }}</td>
+          <td>
+            {% if u.role == 'admin' %}<span class="badge badge-gold">Admin</span>
+            {% elif u.status == 'blocked' %}<span class="badge badge-danger">Bloklangan</span>
+            {% else %}<span class="badge badge-ok">Faol</span>{% endif %}
+          </td>
+          <td class="right">
+            <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-ghost btn-sm">
+              {{ icon('chevron-right', 14) }}
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="center muted small" style="padding:36px">Foydalanuvchilar topilmadi</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% for i in range(1, pages + 1) %}
+      {% if i == page %}<span class="current">{{ i }}</span>
+      {% elif i <= 3 or i > pages - 3 or (i - page) | abs <= 2 %}
+        <a href="{{ url_for('admin.users', q=q, page=i) }}">{{ i }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

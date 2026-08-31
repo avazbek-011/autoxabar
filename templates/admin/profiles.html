@@ -1,0 +1,76 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, plan_badge %}
+{% block title %}Profillar{% endblock %}
+{% block heading %}Profillar monitoringi{% endblock %}
+
+{% block content %}
+
+<div class="flex gap-sm wrap">
+  <a href="{{ url_for('admin.profiles') }}"
+     class="btn btn-sm {{ 'btn-primary' if not status else 'btn-ghost' }}">
+    Barchasi ({{ counts.values() | sum }})
+  </a>
+  {% for key, label in [('running','Ishlayapti'), ('paused','To‘xtatilgan'),
+                        ('connected','Ulangan'), ('expired','Muddati tugagan'),
+                        ('error','Xatolik'), ('banned','Bloklangan')] %}
+    {% if counts.get(key) %}
+    <a href="{{ url_for('admin.profiles', status=key) }}"
+       class="btn btn-sm {{ 'btn-primary' if status == key else 'btn-ghost' }}">
+      {{ label }} ({{ counts.get(key) }})
+    </a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="input-group mb">
+    <span class="ig-icon">{{ icon('search', 17) }}</span>
+    <input class="input" data-filter=".prow" placeholder="Profil yoki foydalanuvchi bo‘yicha qidirish...">
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Profil</th><th>Egasi</th><th class="num">Guruh</th><th class="num">24s</th>
+            <th class="num">Jami</th><th>Reja</th><th>Holat</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in profiles %}
+        <tr class="prow">
+          <td>
+            <b>{{ p.title or 'Profil' }}</b>
+            <div class="xs muted mono">{{ p.phone | phone }}</div>
+          </td>
+          <td>
+            <a href="{{ url_for('admin.user_detail', user_id=p.user_id) }}" class="xs mono">
+              {{ p.uphone | phone }}
+            </a>
+            <div class="xs muted">{{ p.uname or '' }}</div>
+          </td>
+          <td class="num">{{ p.groups_count }}</td>
+          <td class="num">{{ p.sent_24h | num }}</td>
+          <td class="num">{{ p.sent_total | num }}</td>
+          <td>{{ plan_badge(p) }}</td>
+          <td>
+            {{ status_badge(p.status) }}
+            {% if p.status_note %}<div class="xs muted">{{ p.status_note | truncate(40) }}</div>{% endif %}
+          </td>
+          <td class="right">
+            <form method="post" action="{{ url_for('admin.profile_action', profile_id=p.id) }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="{{ 'stop' if p.status == 'running' else 'start' }}">
+              <button class="btn-icon">{{ icon('pause' if p.status == 'running' else 'play', 15) }}</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="center muted small" style="padding:36px">Profillar topilmadi</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="filter-empty hidden center muted small" style="padding:26px">Hech narsa topilmadi</div>
+</div>
+
+{% endblock %}

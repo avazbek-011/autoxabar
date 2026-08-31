@@ -1,0 +1,121 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, plan_badge, empty %}
+{% block title %}Boshqaruv paneli{% endblock %}
+{% block heading %}Boshqaruv paneli{% endblock %}
+{% block subheading %}<div class="sub">Salom, {{ user.name or 'foydalanuvchi' }}! Bugungi holat quyida.</div>{% endblock %}
+
+{% block content %}
+
+{% if not profiles %}
+  <div class="card card-accent">
+    {{ empty('layers', 'Birinchi profilingizni ulang',
+             'Telegram akkauntingizni ulang va xabaringiz guruhlarga avtomatik tarqala boshlaydi.',
+             url_for('cabinet.profiles'), 'Profil qo‘shish') }}
+  </div>
+{% else %}
+
+<div class="grid g4" data-live="{{ url_for('cabinet.api_live') }}" data-every="20000">
+  <div class="stat is-ok">
+    <div class="stat-top">
+      <span class="stat-label">Ishlayotgan</span>
+      <span class="stat-ico">{{ icon('play', 17) }}</span>
+    </div>
+    <div class="stat-value" data-live-key="running">{{ running }}</div>
+    <div class="stat-sub">{{ profiles | length }} ta profildan</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-top">
+      <span class="stat-label">Jami yuborilgan</span>
+      <span class="stat-ico">{{ icon('send', 17) }}</span>
+    </div>
+    <div class="stat-value" data-live-key="sent_total">{{ sent_total | num }}</div>
+    <div class="stat-sub">butun davr uchun</div>
+  </div>
+
+  <div class="stat is-info">
+    <div class="stat-top">
+      <span class="stat-label">24 soatda</span>
+      <span class="stat-ico">{{ icon('zap', 17) }}</span>
+    </div>
+    <div class="stat-value" data-live-key="sent_24h">{{ sent_24h | num }}</div>
+    <div class="stat-sub">oxirgi sutkada</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-top">
+      <span class="stat-label">Faol guruhlar</span>
+      <span class="stat-ico">{{ icon('users', 17) }}</span>
+    </div>
+    <div class="stat-value">{{ groups | num }}</div>
+    <div class="stat-sub">{{ ads_count }} ta xabar tayyor</div>
+  </div>
+</div>
+
+{% if next_expiry %}
+<div class="alert alert-gold">
+  {{ icon('clock', 19) }}
+  <div class="grow">
+    <b>Eng yaqin obuna muddati:</b>
+    «{{ next_expiry.title or next_expiry.phone }}» —
+    {{ next_expiry.expires_at | date }} ({{ next_expiry.expires_at | left }} qoldi)
+  </div>
+  <a href="{{ url_for('cabinet.billing') }}" class="btn btn-outline btn-sm">Boshqarish</a>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">{{ icon('chart', 19) }} Oxirgi 14 kun</div>
+    <span class="legend"><i style="background:var(--g-400)"></i> Yuborilgan xabarlar</span>
+  </div>
+  <div class="chart" data-chart='{{ chart | tojson }}' data-type="bar"></div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('layers', 19) }} Profillar</div>
+      <a href="{{ url_for('cabinet.profiles') }}" class="btn btn-ghost btn-sm">Barchasi</a>
+    </div>
+    <div class="grid" style="gap:12px">
+      {% for p in profiles[:4] %}
+      <a href="{{ url_for('cabinet.profile_detail', profile_id=p.id) }}" class="group-row">
+        <div class="group-ava">{{ (p.title or p.phone)[:2] | upper }}</div>
+        <div class="group-info">
+          <div class="n">{{ p.title or p.phone | phone }}</div>
+          <div class="m">{{ p.groups_count }} guruh · {{ p.interval_min }} daq · {{ p.sent_24h | num }} / 24s</div>
+        </div>
+        {{ status_badge(p.status) }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('activity', 19) }} Oxirgi harakatlar</div>
+    </div>
+    {% if recent %}
+    <div class="grid" style="gap:9px;max-height:330px;overflow-y:auto">
+      {% for r in recent %}
+      <div class="flex items-center gap small">
+        <span class="badge badge-{{ 'ok' if r.status == 'ok' else 'danger' }}" style="min-width:74px;justify-content:center">
+          {{ 'Yuborildi' if r.status == 'ok' else 'Xato' }}
+        </span>
+        <span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          {{ r.chat_title or 'Guruh' }}
+        </span>
+        <span class="xs muted nowrap">{{ r.created_at | ago }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="small muted center" style="padding:30px 0">Hali harakat yo‘q</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

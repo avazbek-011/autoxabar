@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Ommaviy oferta — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:840px">
+    <h1 class="mb">Ommaviy oferta</h1>
+    <p class="muted mb-lg">Oxirgi yangilanish: {{ year }}-yil</p>
+
+    <div class="card">
+      <h3 class="mb">1. Umumiy qoidalar</h3>
+      <p class="mb-lg small">
+        Ushbu hujjat {{ cfg.BRAND_NAME }} ({{ cfg.PRODUCT_NAME }} xizmati) va foydalanuvchi
+        o‘rtasidagi ommaviy oferta hisoblanadi. Saytda ro‘yxatdan o‘tish orqali foydalanuvchi
+        ushbu shartlarni to‘liq qabul qilgan hisoblanadi.
+      </p>
+
+      <h3 class="mb">2. Xizmat mazmuni</h3>
+      <p class="mb-lg small">
+        Xizmat foydalanuvchining Telegram akkaunti orqali, foydalanuvchi tayyorlagan xabarni
+        u a‘zo bo‘lgan guruhlarga belgilangan interval bilan avtomatik yuborishdan iborat.
+        Xizmat xabar mazmuni uchun javobgar emas.
+      </p>
+
+      <h3 class="mb">3. Narx va to‘lov</h3>
+      <p class="mb-lg small">
+        PRO obuna narxi bitta profil uchun 30 kunga {{ price | num }} so‘mni tashkil etadi.
+        To‘lov Payme to‘lov tizimi orqali amalga oshiriladi. Foydalanuvchi kartani bog‘lagan
+        holda avtomatik to‘lovni yoqishi mumkin — bunda summa har 30 kunda avtomatik yechiladi.
+        Avtomatik to‘lovni foydalanuvchi istalgan vaqtda shaxsiy kabinetdan o‘chira oladi.
+      </p>
+
+      <h3 class="mb">4. Foydalanuvchi majburiyatlari</h3>
+      <ul class="price-list mb-lg small">
+        <li>Qonunga zid, aldov yoki spam xarakteridagi xabarlar tarqatmaslik</li>
+        <li>Uchinchi shaxslarning huquqlarini buzmaslik</li>
+        <li>Telegram xizmat ko‘rsatish shartlariga rioya qilish</li>
+        <li>Hisob ma‘lumotlarini uchinchi shaxslarga bermaslik</li>
+      </ul>
+
+      <h3 class="mb">5. Javobgarlik chegarasi</h3>
+      <p class="mb-lg small">
+        Xizmat Telegram tomonidan qo‘yiladigan cheklovlar (FloodWait, akkaunt bloklanishi va
+        boshqalar) uchun javobgar emas. Tizim bloklanish xavfini kamaytiruvchi himoya
+        mexanizmlarini qo‘llaydi, biroq to‘liq kafolat bermaydi. Texnik ishlar yoki uchinchi
+        tomon xizmatlaridagi uzilishlar uchun kompensatsiya to‘lanmaydi.
+      </p>
+
+      <h3 class="mb">6. Pulni qaytarish</h3>
+      <p class="mb-lg small">
+        Xizmat texnik sabablarga ko‘ra ketma-ket 72 soatdan ortiq ishlamagan taqdirda,
+        foydalanuvchi murojaatiga asosan foydalanilmagan kunlar uchun mablag‘ qaytariladi
+        yoki obuna muddati uzaytiriladi.
+      </p>
+
+      <h3 class="mb">7. Shartlarni o‘zgartirish</h3>
+      <p class="small">
+        Xizmat ushbu shartlarga o‘zgartirish kiritish huquqini saqlab qoladi. Muhim
+        o‘zgarishlar haqida saytda va Telegram kanalida oldindan xabar beriladi.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

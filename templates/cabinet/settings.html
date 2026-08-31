@@ -1,0 +1,110 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Sozlamalar{% endblock %}
+{% block heading %}Sozlamalar{% endblock %}
+
+{% block content %}
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('user', 19) }} Shaxsiy ma'lumotlar</div></div>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label class="label" for="name">Ismingiz</label>
+        <input class="input" id="name" name="name" value="{{ user.name }}" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label class="label">Telefon raqami</label>
+        <input class="input mono" value="{{ user.phone | phone }}" disabled>
+        <div class="hint">Raqamni o‘zgartirish uchun qo‘llab-quvvatlashga murojaat qiling</div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="email">Email (ixtiyoriy)</label>
+        <input class="input" id="email" name="email" type="email" value="{{ user.email }}" maxlength="120">
+      </div>
+
+      <div class="field">
+        <label class="label" for="telegram_id">Telegram ID (bildirishnoma uchun)</label>
+        <input class="input mono" id="telegram_id" name="telegram_id"
+               value="{{ user.telegram_id }}" maxlength="32" placeholder="123456789">
+        <div class="hint">
+          ID ni olish uchun Telegram'da <b>@userinfobot</b> ga yozing
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block">{{ icon('check', 18) }} Saqlash</button>
+    </form>
+  </div>
+
+  <div class="grid" style="gap:22px;align-content:start">
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('lock', 19) }} Parolni o‘zgartirish</div></div>
+      <form method="post" action="{{ url_for('auth.change_password') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="field">
+          <label class="label" for="current">Joriy parol</label>
+          <div class="input-group">
+            <span class="ig-icon">{{ icon('lock', 17) }}</span>
+            <input class="input" id="current" name="current" type="password" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="npass">Yangi parol</label>
+          <div class="input-group">
+            <span class="ig-icon">{{ icon('lock', 17) }}</span>
+            <input class="input" id="npass" name="password" type="password" minlength="6" required>
+            <button type="button" class="ig-btn" data-toggle-pass="npass">{{ icon('eye', 17) }}</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="npass2">Yangi parolni takrorlang</label>
+          <div class="input-group">
+            <span class="ig-icon">{{ icon('lock', 17) }}</span>
+            <input class="input" id="npass2" name="password2" type="password" minlength="6" required>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost btn-block">{{ icon('shield', 18) }} Parolni yangilash</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('gift', 19) }} Taklif havolasi</div></div>
+      <p class="small muted mb">
+        Do‘stlaringizni taklif qiling — ular sizning havolangiz orqali ro‘yxatdan o‘tsin.
+      </p>
+      <div class="copy-box mb">
+        <span class="grow">{{ cfg.BASE_URL }}/royxatdan-otish?ref={{ user.ref_code }}</span>
+        <button class="btn-icon" data-copy="{{ cfg.BASE_URL }}/royxatdan-otish?ref={{ user.ref_code }}">
+          {{ icon('copy', 16) }}
+        </button>
+      </div>
+      <div class="flex justify-between items-center small">
+        <span class="muted">Taklif qilinganlar</span>
+        <b>{{ referrals }} ta</b>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">{{ icon('info', 19) }} Hisob</div></div>
+      <div class="flex justify-between items-center mb small">
+        <span class="muted">Ro‘yxatdan o‘tgan</span><b>{{ user.created_at | date }}</b>
+      </div>
+      <div class="flex justify-between items-center mb small">
+        <span class="muted">Oxirgi kirish</span><b>{{ user.last_login_at | dt }}</b>
+      </div>
+      <div class="flex justify-between items-center small">
+        <span class="muted">Balans</span><b class="gold">{{ user.balance | money }}</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

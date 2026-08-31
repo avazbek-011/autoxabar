@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+
+{% block content %}
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">{{ icon('sparkles', 13) }} Telegram avtomatlashtirish</span>
+        <h1>
+          E'loningiz <span class="gold">minglab guruhlarga</span><br>
+          o‘zi tarqaladi
+        </h1>
+        <p class="lead">
+          Bir marta xabar yozing va intervalni tanlang — AutoXabar uni siz a'zo bo‘lgan
+          barcha Telegram guruhlariga kecha-kunduz avtomatik yuboradi.
+          Qo‘lda nusxa ko‘chirish, unutish va vaqt yo‘qotish yo‘q.
+        </p>
+
+        <div class="hero-cta">
+          <a href="{{ url_for('auth.register_view') }}" class="btn btn-primary btn-lg">
+            {{ icon('rocket', 19) }} Bepul boshlash
+          </a>
+          <a href="{{ url_for('site.pricing') }}" class="btn btn-ghost btn-lg">
+            {{ icon('wallet', 19) }} {{ price | num }} so‘m / oy
+          </a>
+        </div>
+
+        <div class="hero-proof" data-live="{{ url_for('site.api_stats') }}" data-every="25000">
+          <div class="hero-proof-item">
+            <div class="v" data-count="{{ stats.sent }}" data-live-key="sent">{{ stats.sent | num }}</div>
+            <div class="k">Yuborilgan xabar</div>
+          </div>
+          <div class="hero-proof-item">
+            <div class="v" data-count="{{ stats.groups }}" data-live-key="groups">{{ stats.groups | num }}</div>
+            <div class="k">Faol guruh</div>
+          </div>
+          <div class="hero-proof-item">
+            <div class="v" data-count="{{ stats.profiles }}" data-live-key="profiles">{{ stats.profiles | num }}</div>
+            <div class="k">Ishlayotgan profil</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <div class="hero-glow"></div>
+        <div class="hero-ring r1"></div>
+        <div class="hero-ring r2"></div>
+        {{ logo(380, 'hero-mark') }}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ ISHONCH ══════════════════ -->
+<section class="section-sm">
+  <div class="container">
+    <div class="grid g4">
+      {% set trust = [
+        ('zap', 'Kuniga 500 000+', 'xabar yuboriladi'),
+        ('shield', 'Ban himoyasi', 'aqlli dam olish rejimi'),
+        ('clock', '2–30 daqiqa', 'moslashuvchan interval'),
+        ('card', 'Payme', 'avtomatik oylik to‘lov')
+      ] %}
+      {% for ico, title, sub in trust %}
+      <div class="stat reveal">
+        <div class="stat-top">
+          <span class="stat-label">{{ sub }}</span>
+          <span class="stat-ico">{{ icon(ico, 17) }}</span>
+        </div>
+        <div class="stat-value" style="font-size:1.32rem">{{ title }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ IMKONIYATLAR ══════════════════ -->
+<section class="section" id="imkoniyatlar">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">{{ icon('layers', 13) }} Imkoniyatlar</span>
+      <h2>Hamma narsa <span class="gold">bitta panelda</span></h2>
+      <p class="lead">Telegram akkauntingizni ulang — qolganini tizim bajaradi.</p>
+    </div>
+
+    <div class="grid g-auto">
+      {% set features = [
+        ('send', 'Avtomatik tarqatish', 'Xabaringiz siz a\'zo bo\'lgan barcha guruhlarga o\'zi yuboriladi. Har bir guruh alohida kuzatiladi.'),
+        ('clock', 'Moslashuvchan interval', '2, 5, 7, 10, 15, 20, 25 yoki 30 daqiqa — o\'zingizga qulay tezlikni tanlang.'),
+        ('shield', 'Aqlli dam olish', '1 soat uzluksiz ishlagach 3–5 daqiqa tanaffus. Bu akkauntni bloklanishdan saqlaydi.'),
+        ('alert', 'FloodWait himoyasi', 'Telegram cheklovi aniqlansa, tizim avtomatik pauza qiladi va keyin davom etadi.'),
+        ('layers', 'Bir nechta profil', 'Bir nechta Telegram akkauntini ulab, qamrovni bir necha barobar oshiring.'),
+        ('sparkles', 'Formatlash saqlanadi', 'Qalin, kursiv, havola, emoji va rasm — hammasi asl ko\'rinishida yetkaziladi.'),
+        ('chart', 'Batafsil statistika', 'Nechta xabar ketdi, qaysi guruh ishlamayapti — barchasi grafik va jadvalda.'),
+        ('power', 'Avtomatik pauza', 'Guruhdan chiqarilsa yoki mute qilinsa, o\'sha guruh o\'zi ro\'yxatdan chiqariladi.'),
+        ('card', 'Avto-to\'lov', 'Kartani bir marta bog\'lang — obuna har oy o\'zi yangilanadi, uzilish bo\'lmaydi.')
+      ] %}
+      {% for ico, title, text in features %}
+      <div class="feature reveal">
+        <div class="feature-ico">{{ icon(ico, 23) }}</div>
+        <h4>{{ title }}</h4>
+        <p>{{ text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ QANDAY ISHLAYDI ══════════════════ -->
+<section class="section" id="qanday">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">{{ icon('target', 13) }} Qanday ishlaydi</span>
+      <h2>4 qadamda <span class="gold">ishga tushadi</span></h2>
+      <p class="lead">O‘rtacha sozlash vaqti — 3 daqiqa.</p>
+    </div>
+
+    <div class="grid g2 gap-lg">
+      <div class="steps">
+        {% set steps = [
+          ('Ro‘yxatdan o‘ting', 'Telefon raqamingiz va parol — boshqa hech narsa kerak emas.'),
+          ('Telegram akkauntini ulang', 'Raqamni kiriting, Telegram yuborgan kodni tasdiqlang. Guruhlaringiz avtomatik o‘qiladi.'),
+          ('Xabaringizni yozing', 'Matn, rasm va formatlashni tayyorlang. Xohlagancha xabar saqlashingiz mumkin.'),
+          ('Ishga tushiring', 'Intervalni tanlab «Boshlash» tugmasini bosing. Tizim 24/7 ishlaydi.')
+        ] %}
+        {% for title, text in steps %}
+        <div class="step reveal">
+          <div class="step-num"></div>
+          <div>
+            <h4>{{ title }}</h4>
+            <p>{{ text }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card card-accent reveal">
+        <div class="card-head">
+          <div class="card-title">{{ icon('activity', 19) }} Jonli ko‘rinish</div>
+          <span class="badge badge-ok"><span class="dot dot-live"></span> Ishlayapti</span>
+        </div>
+
+        <div class="group-row mb">
+          <div class="group-ava">TB</div>
+          <div class="group-info">
+            <div class="n">Toshkent E'lonlar</div>
+            <div class="m">12 480 a'zo</div>
+          </div>
+          <span class="badge badge-ok">{{ icon('check', 13) }} Yuborildi</span>
+        </div>
+
+        <div class="group-row mb">
+          <div class="group-ava">AB</div>
+          <div class="group-info">
+            <div class="n">Avto Bozor UZ</div>
+            <div class="m">8 210 a'zo</div>
+          </div>
+          <span class="badge badge-ok">{{ icon('check', 13) }} Yuborildi</span>
+        </div>
+
+        <div class="group-row mb">
+          <div class="group-ava">IB</div>
+          <div class="group-info">
+            <div class="n">Ish o‘rinlari 24/7</div>
+            <div class="m">21 350 a'zo</div>
+          </div>
+          <span class="badge badge-warn">{{ icon('clock', 13) }} Navbatda</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="xs muted">Keyingi sikl</div>
+            <div class="bold">10 daqiqadan so‘ng</div>
+          </div>
+          <div class="right">
+            <div class="xs muted">Bugun yuborilgan</div>
+            <div class="bold gold">1 284 ta</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ NARX ══════════════════ -->
+<section class="section" id="narx">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">{{ icon('wallet', 13) }} Narxlar</span>
+      <h2>Bitta profil — <span class="gold">{{ price | num }} so‘m</span></h2>
+      <p class="lead">Yashirin to‘lov yo‘q. Istalgan vaqtda bekor qilasiz.</p>
+    </div>
+
+    <div class="grid g2 gap-lg" style="max-width:840px;margin-inline:auto">
+      <div class="price-card reveal">
+        <div class="price-name">Bepul</div>
+        <div class="price-desc">Sinab ko‘rish uchun</div>
+        <div class="price-amount"><span class="n">0</span></div>
+        <div class="price-per">cheksiz muddat</div>
+        <ul class="price-list">
+          <li>{{ icon('check', 18, 'yes') }} Avtomatik tarqatish</li>
+          <li>{{ icon('check', 18, 'yes') }} Barcha intervallar</li>
+          <li>{{ icon('check', 18, 'yes') }} Statistika</li>
+          <li class="off">{{ icon('x', 18, 'no') }} Xabar ostida bizning reklama</li>
+          <li class="off">{{ icon('x', 18, 'no') }} Rasm yuborish yo‘q</li>
+        </ul>
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-ghost btn-block">Boshlash</a>
+      </div>
+
+      <div class="price-card featured reveal">
+        <span class="price-tag">Tavsiya etiladi</span>
+        <div class="price-name">PRO</div>
+        <div class="price-desc">1 profil uchun</div>
+        <div class="price-amount">
+          <span class="n">{{ price | num }}</span>
+          <span class="c">so‘m</span>
+        </div>
+        <div class="price-per">30 kunga · avto-uzaytirish</div>
+        <ul class="price-list">
+          <li>{{ icon('check', 18, 'yes') }} Bepul rejadagi barcha imkoniyatlar</li>
+          <li>{{ icon('check', 18, 'yes') }} <b>Reklamasiz</b> — faqat sizning xabaringiz</li>
+          <li>{{ icon('check', 18, 'yes') }} Rasm + matn yuborish</li>
+          <li>{{ icon('check', 18, 'yes') }} Aqlli dam olish rejimi</li>
+          <li>{{ icon('check', 18, 'yes') }} Ustuvor qo‘llab-quvvatlash</li>
+        </ul>
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-primary btn-block">
+          {{ icon('rocket', 18) }} PRO ni yoqish
+        </a>
+      </div>
+    </div>
+
+    <p class="center muted small mt-lg">
+      To‘lov <b>Payme</b> orqali. Kartani bog‘lasangiz, obuna har oy avtomatik uzayadi.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════ SAVOLLAR ══════════════════ -->
+<section class="section" id="savollar">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">{{ icon('help', 13) }} Savol-javob</span>
+      <h2>Ko‘p so‘raladigan <span class="gold">savollar</span></h2>
+    </div>
+
+    <div class="faq">
+      {% set faqs = [
+        ('Akkauntim bloklanmaydimi?',
+         'Tizim maxsus himoya bilan ishlaydi: guruhlar orasida tasodifiy pauza, 1 soatlik ishdan keyin 3–5 daqiqa dam olish, FloodWait cheklovini avtomatik hurmat qilish. Shunga qaramay, juda qisqa interval (2 daqiqa) va juda ko‘p guruh xavfni oshiradi — yangi akkaunt uchun 10–15 daqiqa tavsiya etamiz.'),
+        ('Guruhlarni o‘zim qo‘shishim kerakmi?',
+         'Yo‘q. Akkauntingiz qaysi guruhlarga a\'zo bo‘lsa, tizim ularni avtomatik o‘qiydi. Siz faqat keraksizlarini o‘chirib qo‘yasiz.'),
+        ('Telefon raqamim va kodim xavfsizmi?',
+         'Kod faqat Telegram sessiyasini yaratish uchun ishlatiladi va saqlanmaydi. Sessiya shifrlangan holda serverda saqlanadi va istalgan vaqtda profilni o‘chirish orqali bekor qilinadi.'),
+        ('To‘lovni qanday amalga oshiraman?',
+         'Payme orqali. Kartani bir marta bog‘lasangiz, har oy ' ~ (price | num) ~ ' so‘m avtomatik yechiladi va obuna uzilmaydi. Avto-to‘lovni istalgan vaqtda o‘chirishingiz mumkin.'),
+        ('Bir nechta akkauntni ulash mumkinmi?',
+         'Ha. Har bir akkaunt alohida profil hisoblanadi va har biri uchun alohida obuna to‘lanadi. Profillar bir-biridan mustaqil ishlaydi.'),
+        ('Obunani bekor qilsam nima bo‘ladi?',
+         'Muddat oxirigacha PRO imkoniyatlari saqlanadi. Muddat tugagach profil to‘xtaydi, lekin ma\'lumotlaringiz va guruhlar ro‘yxati saqlanib qoladi.')
+      ] %}
+      {% for question, answer in faqs %}
+      <div class="faq-item reveal">
+        <button class="faq-q" type="button">
+          <span>{{ question }}</span>
+          {{ icon('chevron-down', 19) }}
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">{{ answer }}</div></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ CTA ══════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="cta-band reveal">
+      {{ logo(74) }}
+      <h2 class="mt">Bugundan boshlab <span class="gold">avtomatik</span> ishlang</h2>
+      <p class="lead">
+        Ro‘yxatdan o‘tish 1 daqiqa. Birinchi profilingiz uchun sinov muddati bepul.
+      </p>
+      <div class="flex gap items-center" style="justify-content:center;flex-wrap:wrap">
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-primary btn-lg">
+          {{ icon('rocket', 19) }} Hoziroq boshlash
+        </a>
+        <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="btn btn-ghost btn-lg">
+          {{ icon('telegram', 19) }} Kanalimiz
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E0526">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Kabinet{% endblock %} — {{ cfg.BRAND_NAME }}</title>
+<link rel="icon" href="{{ url_for('static', filename='img/logo.svg') }}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v={{ asset_v }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% from 'partials/icons.html' import icon, logo %}
+{% set is_admin_area = request.blueprint == 'admin' %}
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a href="{{ url_for('site.index') }}" class="brand">
+        {{ logo(34) }}
+        <span>
+          <span class="brand-name">VIPADSUZ</span>
+          <small>{{ 'BOSHQARUV' if is_admin_area else 'AUTOXABAR' }}</small>
+        </span>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if is_admin_area %}
+        <div class="nav-group">
+          <div class="nav-group-title">Moliya</div>
+          <a href="{{ url_for('admin.dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.dashboard' }}">
+            {{ icon('grid', 19) }} Umumiy ko‘rinish
+          </a>
+          <a href="{{ url_for('admin.finance') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.finance' }}">
+            {{ icon('coins', 19) }} Moliya
+          </a>
+          <a href="{{ url_for('admin.payments') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.payments' }}">
+            {{ icon('receipt', 19) }} To‘lovlar
+          </a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-title">Foydalanuvchilar</div>
+          <a href="{{ url_for('admin.users') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.users' }}">
+            {{ icon('users', 19) }} Foydalanuvchilar
+            {% if stats_admin %}<span class="count">{{ stats_admin.users }}</span>{% endif %}
+          </a>
+          <a href="{{ url_for('admin.profiles') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.profiles' }}">
+            {{ icon('layers', 19) }} Profillar
+            {% if stats_admin %}<span class="count">{{ stats_admin.profiles }}</span>{% endif %}
+          </a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-title">Tizim</div>
+          <a href="{{ url_for('admin.settings') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.settings' }}">
+            {{ icon('sliders', 19) }} Sozlamalar
+          </a>
+          <a href="{{ url_for('admin.system') }}" class="nav-item {{ 'active' if request.endpoint == 'admin.system' }}">
+            {{ icon('activity', 19) }} Tizim holati
+          </a>
+          <a href="{{ url_for('cabinet.dashboard') }}" class="nav-item">
+            {{ icon('arrow-left', 19) }} Kabinetga qaytish
+          </a>
+        </div>
+      {% else %}
+        <div class="nav-group">
+          <div class="nav-group-title">Asosiy</div>
+          <a href="{{ url_for('cabinet.dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'cabinet.dashboard' }}">
+            {{ icon('grid', 19) }} Boshqaruv paneli
+          </a>
+          <a href="{{ url_for('cabinet.profiles') }}" class="nav-item {{ 'active' if request.endpoint in ('cabinet.profiles', 'cabinet.profile_detail') }}">
+            {{ icon('layers', 19) }} Profillar
+            {% if nav_counts %}<span class="count">{{ nav_counts.profiles }}</span>{% endif %}
+          </a>
+          <a href="{{ url_for('cabinet.ads') }}" class="nav-item {{ 'active' if request.endpoint in ('cabinet.ads', 'cabinet.ad_edit') }}">
+            {{ icon('megaphone', 19) }} Xabarlar
+            {% if nav_counts %}<span class="count">{{ nav_counts.ads }}</span>{% endif %}
+          </a>
+          <a href="{{ url_for('cabinet.stats') }}" class="nav-item {{ 'active' if request.endpoint == 'cabinet.stats' }}">
+            {{ icon('chart', 19) }} Statistika
+          </a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-title">Hisob</div>
+          <a href="{{ url_for('cabinet.billing') }}" class="nav-item {{ 'active' if request.endpoint == 'cabinet.billing' }}">
+            {{ icon('wallet', 19) }} Obuna va to‘lovlar
+          </a>
+          <a href="{{ url_for('cabinet.notifications') }}" class="nav-item {{ 'active' if request.endpoint == 'cabinet.notifications' }}">
+            {{ icon('bell', 19) }} Bildirishnomalar
+            {% if unread_count %}<span class="count">{{ unread_count }}</span>{% endif %}
+          </a>
+          <a href="{{ url_for('cabinet.settings') }}" class="nav-item {{ 'active' if request.endpoint == 'cabinet.settings' }}">
+            {{ icon('settings', 19) }} Sozlamalar
+          </a>
+        </div>
+        {% if user and user.role == 'admin' %}
+        <div class="nav-group">
+          <div class="nav-group-title">Admin</div>
+          <a href="{{ url_for('admin.dashboard') }}" class="nav-item">
+            {{ icon('shield', 19) }} Boshqaruv paneli
+          </a>
+        </div>
+        {% endif %}
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+      {% if not is_admin_area and plan_box %}
+        <div class="plan-box">
+          <div class="t">{{ plan_box.title }}</div>
+          <div class="v">{{ plan_box.value }}</div>
+          <a href="{{ url_for('cabinet.billing') }}" class="btn btn-primary btn-sm btn-block">
+            {{ plan_box.action }}
+          </a>
+        </div>
+      {% endif %}
+      <a href="{{ cfg.TELEGRAM_CHANNEL }}" target="_blank" rel="noopener"
+         class="nav-item" style="margin-top:10px">
+        {{ icon('telegram', 19) }} Yangiliklar kanali
+      </a>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-header">
+      <button class="btn-icon sidebar-toggle" aria-label="Menyu">{{ icon('menu', 18) }}</button>
+
+      <div class="grow" style="min-width:0">
+        <h1>{% block heading %}{{ self.title() }}{% endblock %}</h1>
+        {% block subheading %}{% endblock %}
+      </div>
+
+      <div class="dropdown">
+        <button class="btn-icon bell" data-dropdown aria-label="Bildirishnomalar">
+          {{ icon('bell', 18) }}
+          {% if unread_count %}<span class="dot-badge"></span>{% endif %}
+        </button>
+        <div class="dropdown-menu" style="width:330px;max-height:420px;overflow-y:auto">
+          <div class="flex items-center justify-between" style="padding:9px 13px 6px">
+            <strong class="small">Bildirishnomalar</strong>
+            {% if unread_count %}
+            <form method="post" action="{{ url_for('cabinet.notifications_read') }}" data-no-loading>
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button class="xs" style="color:var(--g-300);font-weight:700">Hammasini o‘qish</button>
+            </form>
+            {% endif %}
+          </div>
+          <div class="sep"></div>
+          {% for n in recent_notifications %}
+            <div class="notif-item {{ 'unread' if not n.is_read }}">
+              <div class="notif-ico badge-{{ 'ok' if n.kind == 'success' else ('danger' if n.kind == 'danger' else ('warn' if n.kind == 'warning' else 'info')) }}">
+                {{ icon('bell', 15) }}
+              </div>
+              <div style="min-width:0">
+                <div class="t">{{ n.title }}</div>
+                <div class="b">{{ n.body }}</div>
+                <div class="d">{{ n.created_at | ago }}</div>
+              </div>
+            </div>
+          {% else %}
+            <div class="small muted center" style="padding:24px 12px">Bildirishnomalar yo‘q</div>
+          {% endfor %}
+          <div class="sep"></div>
+          <a href="{{ url_for('cabinet.notifications') }}">{{ icon('list', 17) }} Barchasi</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="user-btn" data-dropdown>
+          <span class="avatar">{{ (user.name[:2] if user.name else user.phone[-2:]) | upper }}</span>
+          <span class="small bold" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            {{ user.name or user.phone | phone }}
+          </span>
+          {{ icon('chevron-down', 15) }}
+        </button>
+        <div class="dropdown-menu">
+          <div style="padding:11px 13px">
+            <div class="bold small">{{ user.name or 'Foydalanuvchi' }}</div>
+            <div class="xs muted mono">{{ user.phone | phone }}</div>
+            {% if user.balance %}
+              <div class="xs mt" style="color:var(--g-300)">Balans: {{ user.balance | money }}</div>
+            {% endif %}
+          </div>
+          <div class="sep"></div>
+          <a href="{{ url_for('cabinet.settings') }}">{{ icon('settings', 17) }} Sozlamalar</a>
+          <a href="{{ url_for('cabinet.billing') }}">{{ icon('wallet', 17) }} Obuna</a>
+          <a href="{{ url_for('site.index') }}">{{ icon('home', 17) }} Sayt</a>
+          <div class="sep"></div>
+          <form method="post" action="{{ url_for('auth.logout_view') }}" data-no-loading>
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="danger">{{ icon('logout', 17) }} Chiqish</button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-body">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+{% for kind, message in get_flashed_messages(with_categories=true) %}
+  <span data-flash="{{ message }}" data-kind="{{ kind }}" hidden></span>
+{% endfor %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}?v={{ asset_v }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

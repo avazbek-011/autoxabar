@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon, logo %}
+{% block title %}Parolni tiklash — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="mark">{{ logo(62) }}</div>
+      <h2>Parolni tiklash</h2>
+      <p>
+        {% if step == 'phone' %}Raqamingizni kiriting — tasdiqlash kodi yuboriladi
+        {% elif step == 'code' %}{{ phone | phone }} raqamiga yuborilgan kodni kiriting
+        {% else %}Yangi parolni o‘rnating{% endif %}
+      </p>
+    </div>
+
+    <div class="stepper">
+      <span class="s {{ 'done' if step != 'phone' else 'on' }}">1</span>
+      <span class="l"></span>
+      <span class="s {{ 'done' if step == 'password' else ('on' if step == 'code' else '') }}">2</span>
+      <span class="l"></span>
+      <span class="s {{ 'on' if step == 'password' else '' }}">3</span>
+    </div>
+
+    {% if step == 'phone' %}
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="send">
+      <div class="field">
+        <label class="label" for="phone">Telefon raqami</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('phone', 17) }}</span>
+          <input class="input" id="phone" name="phone" data-phone inputmode="tel"
+                 placeholder="+998 90 123 45 67" required>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg">{{ icon('send', 18) }} Kod yuborish</button>
+    </form>
+
+    {% elif step == 'code' %}
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="verify">
+      <div class="field">
+        <label class="label center">Tasdiqlash kodi</label>
+        <div class="otp" data-autosubmit="off">
+          {% for i in range(5) %}<input name="code" inputmode="numeric" maxlength="1"
+                 autocomplete="one-time-code" pattern="[0-9]*" required>{% endfor %}
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg">{{ icon('check', 18) }} Tasdiqlash</button>
+    </form>
+
+    {% else %}
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="save">
+      <div class="field">
+        <label class="label" for="password">Yangi parol</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('lock', 17) }}</span>
+          <input class="input" id="password" name="password" type="password"
+                 minlength="6" placeholder="Kamida 6 ta belgi" required>
+          <button type="button" class="ig-btn" data-toggle-pass="password">{{ icon('eye', 17) }}</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="password2">Parolni takrorlang</label>
+        <div class="input-group">
+          <span class="ig-icon">{{ icon('lock', 17) }}</span>
+          <input class="input" id="password2" name="password2" type="password" minlength="6" required>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg">{{ icon('check', 18) }} Saqlash</button>
+    </form>
+    {% endif %}
+
+    <div class="auth-foot">
+      <a href="{{ url_for('auth.login_view') }}">Kirish sahifasiga qaytish</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

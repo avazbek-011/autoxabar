@@ -1,0 +1,168 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/ui.html' import status_badge, pay_badge %}
+{% block title %}Umumiy ko‘rinish{% endblock %}
+{% block heading %}Umumiy ko‘rinish{% endblock %}
+{% block subheading %}<div class="sub">{{ month_rep.month_label }} · butun tizim holati</div>{% endblock %}
+
+{% block content %}
+
+<!-- Moliya qisqacha -->
+<div class="grid g4">
+  <div class="stat">
+    <div class="stat-top">
+      <span class="stat-label">Bugungi tushum</span>
+      <span class="stat-ico">{{ icon('coins', 17) }}</span>
+    </div>
+    <div class="stat-value">{{ today_rev.gross | money('') }}</div>
+    <div class="stat-sub">{{ today_rev.count }} ta to‘lov</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-top">
+      <span class="stat-label">Oylik yalpi</span>
+      <span class="stat-ico">{{ icon('trending', 17) }}</span>
+    </div>
+    <div class="stat-value">{{ month_rep.gross | money('') }}</div>
+    <div class="stat-sub">{{ month_rep.payments_count }} ta to‘lov</div>
+  </div>
+
+  <div class="stat is-danger">
+    <div class="stat-top">
+      <span class="stat-label">Soliq ({{ month_rep.tax_percent }}%)</span>
+      <span class="stat-ico">{{ icon('percent', 17) }}</span>
+    </div>
+    <div class="stat-value">{{ month_rep.tax | money('') }}</div>
+    <div class="stat-sub">ajratib qo‘yiladi</div>
+  </div>
+
+  <div class="stat is-ok">
+    <div class="stat-top">
+      <span class="stat-label">Sof foyda (oylik)</span>
+      <span class="stat-ico">{{ icon('wallet', 17) }}</span>
+    </div>
+    <div class="stat-value gold">{{ month_rep.profit | money('') }}</div>
+    <div class="stat-sub">yechib olish mumkin: {{ month_rep.remaining_net | money }}</div>
+  </div>
+</div>
+
+<div class="alert alert-gold">
+  {{ icon('bank', 19) }}
+  <div class="grow">
+    <b>Hozir bankdan yechish mumkin:</b>
+    <span class="gold bold">{{ all_time.available | money }}</span>
+    <span class="muted small">(butun davr bo‘yicha to‘plangan sof foyda)</span>
+  </div>
+  <a href="{{ url_for('admin.finance') }}" class="btn btn-primary btn-sm">
+    {{ icon('arrow-right', 15) }} Moliya bo‘limi
+  </a>
+</div>
+
+<!-- Tizim qisqacha -->
+<div class="grid g4">
+  <div class="stat is-info">
+    <div class="stat-top"><span class="stat-label">Foydalanuvchilar</span><span class="stat-ico">{{ icon('users', 17) }}</span></div>
+    <div class="stat-value">{{ users_total | num }}</div>
+    <div class="stat-sub">bugun +{{ users_today }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">Profillar</span><span class="stat-ico">{{ icon('layers', 17) }}</span></div>
+    <div class="stat-value">{{ profiles_total | num }}</div>
+    <div class="stat-sub">{{ profiles_pro }} ta PRO</div>
+  </div>
+  <div class="stat is-ok">
+    <div class="stat-top"><span class="stat-label">Ishlayapti</span><span class="stat-ico">{{ icon('play', 17) }}</span></div>
+    <div class="stat-value">{{ profiles_running | num }}</div>
+    <div class="stat-sub">hozir faol</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><span class="stat-label">24 soatda yuborilgan</span><span class="stat-ico">{{ icon('send', 17) }}</span></div>
+    <div class="stat-value">{{ sent_24h | num }}</div>
+    <div class="stat-sub">jami {{ sent_total | compact }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">{{ icon('chart', 19) }} Kunlik tushum (30 kun)</div>
+    <span class="legend"><i style="background:var(--g-400)"></i> Yalpi tushum, so‘m</span>
+  </div>
+  <div class="chart" data-chart='{{ chart | tojson }}' data-type="bar"></div>
+</div>
+
+{% if problems %}
+<div class="card">
+  <div class="card-head">
+    <div class="card-title" style="color:var(--danger)">{{ icon('alert', 19) }} Muammoli profillar</div>
+    <a href="{{ url_for('admin.profiles') }}" class="btn btn-ghost btn-sm">Barchasi</a>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Profil</th><th>Foydalanuvchi</th><th>Holat</th><th>Izoh</th></tr></thead>
+      <tbody>
+        {% for p in problems %}
+        <tr>
+          <td><b>{{ p.title or 'Profil' }}</b><div class="xs muted mono">{{ p.phone | phone }}</div></td>
+          <td class="mono xs">{{ p.uphone | phone }}</td>
+          <td>{{ status_badge(p.status) }}</td>
+          <td class="xs muted">{{ p.status_note or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('receipt', 19) }} Oxirgi to‘lovlar</div>
+      <a href="{{ url_for('admin.payments') }}" class="btn btn-ghost btn-sm">Barchasi</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table" style="min-width:auto">
+        <thead><tr><th>Foydalanuvchi</th><th class="num">Summa</th><th>Sana</th></tr></thead>
+        <tbody>
+          {% for p in recent_payments %}
+          <tr>
+            <td>
+              <a href="{{ url_for('admin.user_detail', user_id=p.user_id) }}">
+                {{ p.name or 'Foydalanuvchi' }}
+                <div class="xs muted mono">{{ p.phone | phone }}</div>
+              </a>
+            </td>
+            <td class="num bold gold">{{ p.amount | money('') }}</td>
+            <td class="xs muted nowrap">{{ p.paid_at | ago }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="center muted small" style="padding:26px">Hali to‘lov yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('users', 19) }} Yangi foydalanuvchilar</div>
+      <a href="{{ url_for('admin.users') }}" class="btn btn-ghost btn-sm">Barchasi</a>
+    </div>
+    <div class="grid" style="gap:9px">
+      {% for u in recent_users %}
+      <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="group-row">
+        <div class="group-ava">{{ (u.name or u.phone)[-2:] | upper }}</div>
+        <div class="group-info">
+          <div class="n">{{ u.name or 'Foydalanuvchi' }}</div>
+          <div class="m mono">{{ u.phone | phone }}</div>
+        </div>
+        <span class="xs muted nowrap">{{ u.created_at | ago }}</span>
+      </a>
+      {% else %}
+        <p class="center muted small" style="padding:26px">Hali foydalanuvchi yo‘q</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Qo‘llanma — {{ cfg.BRAND_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">{{ icon('file', 13) }} Qo‘llanma</span>
+      <h2>Boshlash <span class="gold">qo‘llanmasi</span></h2>
+      <p class="lead">Sozlash 3 daqiqa vaqt oladi.</p>
+    </div>
+
+    <div style="max-width:820px;margin-inline:auto">
+      <div class="steps mb-lg">
+        {% set steps = [
+          ('Hisob yarating', 'Telefon raqamingiz va parol bilan ro‘yxatdan o‘ting. Tasdiqlash uchun qo‘shimcha hujjat talab qilinmaydi.'),
+          ('Telegram akkauntini ulang', '«Profillar» bo‘limiga o‘tib, akkaunt raqamini kiriting. Telegram ilovangizga kod keladi — uni saytga kiriting. Agar ikki bosqichli parol yoqilgan bo‘lsa, uni ham so‘raydi.'),
+          ('Guruhlarni tekshiring', 'Akkaunt a‘zo bo‘lgan guruhlar avtomatik ro‘yxatga tushadi. Keraksizlarini bir bosishda o‘chirib qo‘ying.'),
+          ('Xabar yarating', '«Xabarlar» bo‘limida matn yozing. Qalin, kursiv va havolalarni ishlatishingiz mumkin. PRO rejada rasm ham qo‘shiladi.'),
+          ('Interval tanlang', '2 dan 30 daqiqagacha. Yangi akkauntlar uchun 10–15 daqiqa tavsiya qilinadi — bu eng xavfsiz oraliq.'),
+          ('Ishga tushiring', '«Boshlash» tugmasini bosing. Shu daqiqadan boshlab tizim xabaringizni guruhlarga tarqatadi.')
+        ] %}
+        {% for title, text in steps %}
+        <div class="step">
+          <div class="step-num"></div>
+          <div><h4>{{ title }}</h4><p>{{ text }}</p></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="alert alert-gold mb">
+        {{ icon('shield', 19) }}
+        <div>
+          <b>Akkauntni saqlash bo‘yicha maslahat.</b>
+          Yangi ochilgan Telegram akkauntlar tezroq bloklanadi. Birinchi hafta 15–30 daqiqalik
+          interval bilan ishlang, guruhlar sonini asta oshiring va «Aqlli dam olish»ni
+          doim yoqiq holda qoldiring.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">{{ icon('alert', 19) }} Tez-tez uchraydigan holatlar</div></div>
+        <div class="grid" style="gap:16px">
+          <div>
+            <h4 class="mb">Guruh «mute» belgisini oldi</h4>
+            <p class="small muted">Guruhda yozish taqiqlangan. Tizim uni avtomatik o‘chiradi va boshqa urinmaydi.</p>
+          </div>
+          <div class="divider" style="margin:0"></div>
+          <div>
+            <h4 class="mb">FloodWait xatosi</h4>
+            <p class="small muted">Telegram vaqtincha cheklov qo‘ydi. Tizim kutadi va o‘zi davom ettiradi — hech narsa qilish shart emas.</p>
+          </div>
+          <div class="divider" style="margin:0"></div>
+          <div>
+            <h4 class="mb">Profil «error» holatida</h4>
+            <p class="small muted">Sessiya bekor qilingan bo‘lishi mumkin (masalan, Telegram’dan barcha seanslarni chiqargansiz). Profilni o‘chirib, qaytadan ulang.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="center mt-lg">
+        <a href="{{ url_for('auth.register_view') }}" class="btn btn-primary btn-lg">
+          {{ icon('rocket', 19) }} Hoziroq boshlash
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

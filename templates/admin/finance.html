@@ -1,0 +1,422 @@
+{% extends 'app_base.html' %}
+{% from 'partials/icons.html' import icon %}
+{% block title %}Moliya{% endblock %}
+{% block heading %}Moliya{% endblock %}
+{% block subheading %}<div class="sub">{{ report.month_label }} · soliq {{ report.tax_percent }}% · ekvayring {{ report.fee_percent }}%</div>{% endblock %}
+
+{% block content %}
+
+<!-- ═════════ OY TANLASH ═════════ -->
+<div class="flex gap wrap items-center">
+  <form method="get" class="flex gap-sm items-center">
+    <select class="select" name="month" data-autosubmit style="min-width:190px">
+      {% for m in months %}
+        <option value="{{ m }}" {{ 'selected' if m == month }}>{{ m }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <div class="grow"></div>
+  <form method="post" action="{{ url_for('admin.finance_rebuild') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button class="btn btn-ghost btn-sm">{{ icon('refresh', 15) }} Daftarni qayta hisoblash</button>
+  </form>
+  <button class="btn btn-ghost btn-sm" onclick="window.print()">{{ icon('download', 15) }} Chop etish</button>
+</div>
+
+<!-- ═════════ ASOSIY RAQAMLAR ═════════ -->
+<div class="grid g4">
+  <div class="stat">
+    <div class="stat-top">
+      <span class="stat-label">Yalpi tushum</span>
+      <span class="stat-ico">{{ icon('coins', 17) }}</span>
+    </div>
+    <div class="stat-value">{{ report.gross | money('') }}</div>
+    <div class="stat-sub">{{ report.payments_count }} ta to‘lov · o‘rtacha {{ report.avg_check | money }}</div>
+  </div>
+
+  <div class="stat is-info">
+    <div class="stat-top">
+      <span class="stat-label">Payme komissiyasi</span>
+      <span class="stat-ico">{{ icon('card', 17) }}</span>
+    </div>
+    <div class="stat-value">−{{ report.fee | money('') }}</div>
+    <div class="stat-sub">{{ report.fee_percent }}% ekvayring</div>
+  </div>
+
+  <div class="stat is-danger">
+    <div class="stat-top">
+      <span class="stat-label">Soliq</span>
+      <span class="stat-ico">{{ icon('percent', 17) }}</span>
+    </div>
+    <div class="stat-value">−{{ report.tax | money('') }}</div>
+    <div class="stat-sub">{{ report.tax_percent }}% · to‘lanmagan: {{ report.remaining_tax | money }}</div>
+  </div>
+
+  <div class="stat is-ok">
+    <div class="stat-top">
+      <span class="stat-label">SOF FOYDA</span>
+      <span class="stat-ico">{{ icon('wallet', 17) }}</span>
+    </div>
+    <div class="stat-value gold">{{ report.profit | money('') }}</div>
+    <div class="stat-sub">xarajatlardan keyin</div>
+  </div>
+</div>
+
+<!-- ═════════ TAQSIMOT ═════════ -->
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">{{ icon('layers', 19) }} {{ report.month_label }} taqsimoti</div>
+    <div class="legend">
+      <span><i style="background:var(--g-400)"></i> Sof foyda</span>
+      <span><i style="background:#F59E0B"></i> Xarajat</span>
+      <span><i style="background:#E11D48"></i> Soliq</span>
+      <span><i style="background:#3B82F6"></i> Komissiya</span>
+    </div>
+  </div>
+
+  {% if report.gross > 0 %}
+  <div class="split-bar mb">
+    <div class="split-net" style="flex:{{ report.profit if report.profit > 0 else 0 }}">
+      {% if report.profit * 100 // report.gross > 12 %}{{ report.profit | money('') }}{% endif %}
+    </div>
+    <div class="split-exp" style="flex:{{ report.expenses }}">
+      {% if report.expenses * 100 // report.gross > 8 %}{{ report.expenses | money('') }}{% endif %}
+    </div>
+    <div class="split-tax" style="flex:{{ report.tax }}">
+      {% if report.tax * 100 // report.gross > 8 %}{{ report.tax | money('') }}{% endif %}
+    </div>
+    <div class="split-fee" style="flex:{{ report.fee if report.fee else 0 }}"></div>
+  </div>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table class="table" style="min-width:auto">
+      <tbody>
+        <tr>
+          <td>{{ icon('coins', 16) }} Yalpi tushum</td>
+          <td class="num bold">{{ report.gross | money }}</td>
+          <td class="num muted xs">100%</td>
+        </tr>
+        <tr>
+          <td>{{ icon('card', 16) }} Payme ekvayring komissiyasi</td>
+          <td class="num" style="color:var(--info)">−{{ report.fee | money }}</td>
+          <td class="num muted xs">{{ report.fee_percent }}%</td>
+        </tr>
+        <tr>
+          <td><b>{{ icon('bank', 16) }} Hisobga tushgan summa</b></td>
+          <td class="num bold">{{ report.receipt | money }}</td>
+          <td class="num muted xs">—</td>
+        </tr>
+        <tr>
+          <td>{{ icon('percent', 16) }} Soliq ({{ report.tax_percent }}%)</td>
+          <td class="num" style="color:var(--danger)">−{{ report.tax | money }}</td>
+          <td class="num muted xs">{{ report.tax_percent }}%</td>
+        </tr>
+        <tr>
+          <td>{{ icon('list', 16) }} Xarajatlar</td>
+          <td class="num" style="color:var(--warn)">−{{ report.expenses | money }}</td>
+          <td class="num muted xs">—</td>
+        </tr>
+        <tr style="background:rgba(220,171,30,.08)">
+          <td><b>{{ icon('wallet', 16) }} SOF FOYDA (sizga)</b></td>
+          <td class="num bold gold" style="font-size:1.05rem">{{ report.profit | money }}</td>
+          <td class="num muted xs">
+            {% if report.gross %}{{ (report.profit * 100 // report.gross) }}%{% else %}—{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>{{ icon('download', 16) }} Yechib olingan</td>
+          <td class="num">{{ report.withdrawn_net | money }}</td>
+          <td class="num muted xs">—</td>
+        </tr>
+        <tr style="background:rgba(52,211,153,.07)">
+          <td><b>{{ icon('bank', 16) }} Shu oydan yechish mumkin</b></td>
+          <td class="num bold" style="color:var(--ok);font-size:1.05rem">{{ report.remaining_net | money }}</td>
+          <td class="num muted xs">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═════════ YECHIB OLISH ═════════ -->
+<div class="grid g2">
+  <div class="card card-accent">
+    <div class="card-head">
+      <div class="card-title">{{ icon('bank', 19) }} Bankdan yechib olish</div>
+    </div>
+
+    <div class="grid g2 mb">
+      <div>
+        <div class="xs muted up">Butun davr bo‘yicha</div>
+        <div class="stat-value gold" style="font-size:1.7rem">{{ totals.available | money('') }}</div>
+        <div class="xs muted">so‘m — yechish mumkin</div>
+      </div>
+      <div>
+        <div class="xs muted up">To‘lanmagan soliq</div>
+        <div class="stat-value" style="font-size:1.7rem;color:var(--danger)">{{ totals.tax_due | money('') }}</div>
+        <div class="xs muted">so‘m — byudjetga</div>
+      </div>
+    </div>
+
+    {% if bank_name or bank_account %}
+    <div class="copy-box mb">
+      <span class="grow">{{ bank_name }} {{ bank_account }}</span>
+      <button class="btn-icon" data-copy="{{ bank_account }}">{{ icon('copy', 16) }}</button>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('admin.payout_add') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="month" value="{{ month }}">
+
+      <div class="grid g2">
+        <div class="field">
+          <label class="label" for="p_amount">Summa (so‘m)</label>
+          <input class="input" id="p_amount" name="amount" type="number" min="1"
+                 value="{{ report.remaining_net if report.remaining_net > 0 else '' }}" required>
+        </div>
+        <div class="field">
+          <label class="label" for="p_kind">Turi</label>
+          <select class="select" id="p_kind" name="kind">
+            <option value="net">Sof foyda (o‘zimga)</option>
+            <option value="tax">Soliq to‘lovi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="p_dest">Qayerga</label>
+        <input class="input" id="p_dest" name="destination"
+               placeholder="Masalan: Kapitalbank karta ****1234" value="{{ bank_name }}">
+      </div>
+
+      <div class="field">
+        <label class="label" for="p_note">Izoh</label>
+        <input class="input" id="p_note" name="note" placeholder="ixtiyoriy">
+      </div>
+
+      <label class="check mb">
+        <input type="checkbox" name="force">
+        <span class="box"></span>
+        <span class="small">Qoldiqdan ortiq bo‘lsa ham yozish</span>
+      </label>
+
+      <button class="btn btn-primary btn-block">{{ icon('download', 18) }} Yechib olishni qayd etish</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('list', 19) }} Xarajat qo‘shish</div></div>
+    <form method="post" action="{{ url_for('admin.expense_add') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="month" value="{{ month }}">
+
+      <div class="field">
+        <label class="label" for="e_title">Nomi</label>
+        <input class="input" id="e_title" name="title" placeholder="Masalan: Server to‘lovi" required>
+      </div>
+
+      <div class="grid g2">
+        <div class="field">
+          <label class="label" for="e_amount">Summa (so‘m)</label>
+          <input class="input" id="e_amount" name="amount" type="number" min="1" required>
+        </div>
+        <div class="field">
+          <label class="label" for="e_cat">Turkum</label>
+          <select class="select" id="e_cat" name="category">
+            {% for key, label in categories.items() %}
+              <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="e_note">Izoh</label>
+        <input class="input" id="e_note" name="note" placeholder="ixtiyoriy">
+      </div>
+
+      <button class="btn btn-ghost btn-block">{{ icon('plus', 18) }} Xarajatni qo‘shish</button>
+    </form>
+
+    <div class="divider"></div>
+
+    <div class="card-title mb" style="font-size:.92rem">{{ icon('trending', 17) }} Keyingi oy prognozi</div>
+    <div class="flex justify-between items-center mb small">
+      <span class="muted">Faol avto-obunalar</span><b>{{ active_subs }} ta</b>
+    </div>
+    <div class="flex justify-between items-center mb small">
+      <span class="muted">Kutilayotgan tushum</span><b>{{ forecast.gross | money }}</b>
+    </div>
+    <div class="flex justify-between items-center small">
+      <span class="muted">Shundan sof foyda</span><b class="gold">{{ forecast.net | money }}</b>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ GRAFIKLAR ═════════ -->
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('chart', 19) }} Oylik sof foyda (12 oy)</div>
+    </div>
+    <div class="chart" data-chart='{{ chart_monthly | tojson }}' data-type="bar"></div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">{{ icon('activity', 19) }} Kunlik tushum (30 kun)</div>
+    </div>
+    <div class="chart" data-chart='{{ chart_daily | tojson }}' data-type="line"></div>
+  </div>
+</div>
+
+<!-- ═════════ OYLAR JADVALI ═════════ -->
+<div class="card">
+  <div class="card-head"><div class="card-title">{{ icon('calendar', 19) }} Oylar kesimida</div></div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Oy</th><th class="num">To‘lov</th><th class="num">Yalpi</th>
+          <th class="num">Soliq</th><th class="num">Xarajat</th>
+          <th class="num">Sof foyda</th><th class="num">Yechilgan</th><th class="num">Qoldiq</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in series | reverse %}
+        <tr>
+          <td><a href="{{ url_for('admin.finance', month=s.month) }}"><b>{{ s.label }}</b></a></td>
+          <td class="num">{{ s.count }}</td>
+          <td class="num">{{ s.gross | money('') }}</td>
+          <td class="num" style="color:var(--danger)">{{ s.tax | money('') }}</td>
+          <td class="num" style="color:var(--warn)">{{ s.expenses | money('') }}</td>
+          <td class="num bold gold">{{ s.profit | money('') }}</td>
+          <td class="num">{{ s.withdrawn | money('') }}</td>
+          <td class="num bold" style="color:var(--ok)">{{ (s.profit - s.withdrawn) | money('') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(255,255,255,.05)">
+          <td><b>JAMI (butun davr)</b></td>
+          <td class="num bold">{{ totals.payments_count }}</td>
+          <td class="num bold">{{ totals.gross | money('') }}</td>
+          <td class="num bold">{{ totals.tax | money('') }}</td>
+          <td class="num bold">{{ totals.expenses | money('') }}</td>
+          <td class="num bold gold">{{ totals.profit | money('') }}</td>
+          <td class="num bold">{{ totals.withdrawn_net | money('') }}</td>
+          <td class="num bold" style="color:var(--ok)">{{ totals.available | money('') }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- ═════════ TARIXLAR ═════════ -->
+<div class="tabs">
+  <button class="tab active" data-tab="daftar">Tushumlar daftari</button>
+  <button class="tab" data-tab="yechimlar">Yechib olishlar</button>
+  <button class="tab" data-tab="xarajatlar">Xarajatlar</button>
+</div>
+
+<div class="tab-panel active" data-panel="daftar">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('receipt', 19) }} {{ report.month_label }} tushumlari</div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Sana</th><th>Foydalanuvchi</th><th class="num">Yalpi</th>
+              <th class="num">Komissiya</th><th class="num">Soliq</th><th class="num">Sof</th></tr>
+        </thead>
+        <tbody>
+          {% for l in ledger %}
+          <tr>
+            <td class="xs muted nowrap">{{ l.day }}</td>
+            <td>
+              {% if l.user_id %}
+              <a href="{{ url_for('admin.user_detail', user_id=l.user_id) }}">
+                {{ l.name or 'Foydalanuvchi' }}
+                <div class="xs muted mono">{{ l.phone | phone }}</div>
+              </a>
+              {% else %}—{% endif %}
+            </td>
+            <td class="num">{{ l.gross | money('') }}</td>
+            <td class="num muted">{{ l.acquiring_fee | money('') }}</td>
+            <td class="num" style="color:var(--danger)">{{ l.tax | money('') }}</td>
+            <td class="num bold gold">{{ l.net | money('') }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="center muted small" style="padding:30px">Bu oyda tushum yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tab-panel" data-panel="yechimlar">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('bank', 19) }} Yechib olishlar tarixi</div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Sana</th><th>Oy</th><th>Turi</th><th>Qayerga</th><th class="num">Summa</th><th></th></tr></thead>
+        <tbody>
+          {% for p in payouts %}
+          <tr>
+            <td class="xs muted nowrap">{{ p.paid_at | dt }}</td>
+            <td>{{ p.month }}</td>
+            <td>
+              {% if p.kind == 'tax' %}<span class="badge badge-danger">Soliq</span>
+              {% else %}<span class="badge badge-gold">Sof foyda</span>{% endif %}
+            </td>
+            <td class="small">{{ p.destination or '—' }}<div class="xs muted">{{ p.note or '' }}</div></td>
+            <td class="num bold">{{ p.amount | money('') }}</td>
+            <td class="right">
+              <form method="post" action="{{ url_for('admin.payout_delete', payout_id=p.id) }}"
+                    data-confirm="Yozuv o‘chirilsinmi?">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button class="btn-icon">{{ icon('trash', 15) }}</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="center muted small" style="padding:30px">Hali yechib olinmagan</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tab-panel" data-panel="xarajatlar">
+  <div class="card">
+    <div class="card-head"><div class="card-title">{{ icon('list', 19) }} {{ report.month_label }} xarajatlari</div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Sana</th><th>Nomi</th><th>Turkum</th><th class="num">Summa</th><th></th></tr></thead>
+        <tbody>
+          {% for e in expenses %}
+          <tr>
+            <td class="xs muted nowrap">{{ e.day }}</td>
+            <td>{{ e.title }}<div class="xs muted">{{ e.note or '' }}</div></td>
+            <td><span class="badge badge-muted">{{ categories.get(e.category, e.category) }}</span></td>
+            <td class="num bold" style="color:var(--warn)">{{ e.amount | money('') }}</td>
+            <td class="right">
+              <form method="post" action="{{ url_for('admin.expense_delete', expense_id=e.id) }}"
+                    data-confirm="Xarajat o‘chirilsinmi?">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button class="btn-icon">{{ icon('trash', 15) }}</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="center muted small" style="padding:30px">Bu oyda xarajat yo‘q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
