@@ -39,8 +39,11 @@ class Config:
     RUN_SCHEDULER = _str("RUN_SCHEDULER", "1") not in ("0", "false", "False")
 
     BASE_DIR = BASE_DIR
-    DB_PATH = str(BASE_DIR / "data" / "autoxabar.db")
-    SESSION_DIR = str(BASE_DIR / "sessions")
+    # DATA_DIR ni muhit o'zgaruvchisi orqali ko'rsatish mumkin —
+    # Render'da doimiy disk ulanganda o'sha yo'lni beriladi.
+    DATA_DIR = _str("DATA_DIR") or str(BASE_DIR / "data")
+    DB_PATH = os.path.join(DATA_DIR, "autoxabar.db")
+    SESSION_DIR = _str("SESSION_DIR") or str(BASE_DIR / "sessions")
     UPLOAD_DIR = str(BASE_DIR / "static" / "uploads")
 
     # --- Sessiya cookie ---

@@ -6,3 +6,6 @@ requests==2.34.2
 python-dotenv==1.0.1
 APScheduler==3.10.4
 Telethon==1.44.0
+
+# Ishlab chiqarish serveri (Render/Linux uchun)
+gunicorn==23.0.0; sys_platform != "win32"

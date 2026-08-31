@@ -205,3 +205,52 @@ shuning uchun waitress/gunicorn ostida ham avtomatik ishlaydi.
 > Bir nechta ishchi jarayon (worker) ishlatsangiz, ulardan faqat bittasida
 > rejalashtiruvchi yonishi kerak — qolganlariga `.env` orqali
 > `RUN_SCHEDULER=0` bering, aks holda xabarlar takroran yuboriladi.
+
+---
+
+## 8. Render.com ga joylashtirish (ommaviy havola)
+
+Repozitoriyda `render.yaml` bor, shuning uchun sozlash bir necha bosishdan iborat.
+
+1. <https://render.com> ga kiring — **Get Started** → **GitHub** bilan ro'yxatdan o'ting
+2. **New** → **Blueprint** → `autoxabar` repozitoriysini tanlang
+3. Render `render.yaml` ni o'qiydi va quyidagi qiymatlarni so'raydi:
+
+| Maydon | Nima yoziladi |
+|---|---|
+| `ADMIN_PHONE` | `+998900000000` (yoki o'z raqamingiz) |
+| `ADMIN_PASSWORD` | kuchli parol o'ylab toping |
+| `TELEGRAM_API_ID` | my.telegram.org dan olingan raqam |
+| `TELEGRAM_API_HASH` | my.telegram.org dan olingan hash |
+| `PAYME_*` | hozircha bo'sh qoldiring |
+| `BASE_URL` | deploydan keyin haqiqiy havola bilan to'ldiring |
+
+4. **Apply** → 3–5 daqiqada `https://autoxabar.onrender.com` tayyor bo'ladi
+
+Keyin **Environment** bo'limida `BASE_URL` ni haqiqiy havola bilan almashtiring
+(Payme qaytish manzili shu asosda quriladi).
+
+### Bepul tarifning cheklovlari
+
+- **Uyqu rejimi.** 15 daqiqa hech kim kirmasa xizmat uxlaydi; keyingi ochilish
+  ~30 soniya kutdiradi. Fon vazifalari ham shu paytda to'xtaydi — ya'ni
+  xabar tarqatish uzluksiz ishlashi uchun pullik tarif kerak.
+- **Ma'lumotlar saqlanmaydi.** Har deploydan keyin fayl tizimi tozalanadi va
+  SQLite bazasi nolga qaytadi (foydalanuvchilar, profillar, to'lovlar o'chadi).
+
+### Doimiy ish uchun
+
+Xizmat jiddiy ishlaydigan bo'lsa:
+
+1. Render'da **Starter** tarifga o'ting (uyqu yo'q)
+2. **Disks** bo'limida doimiy disk ulang, masalan `/var/data`
+3. **Environment** ga qo'shing:
+
+```
+DATA_DIR=/var/data
+```
+
+Shundan keyin baza deploylardan keyin ham saqlanadi.
+
+> Payme integratsiyasi uchun HTTPS manzil shart — Render buni avtomatik beradi.
+> Payme kassasidagi Endpoint URL: `https://sizning-manzilingiz.onrender.com/api/payme`
