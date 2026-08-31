@@ -3,7 +3,9 @@
 {% from 'partials/ui.html' import status_badge, plan_badge, empty %}
 {% block title %}Profillar{% endblock %}
 {% block heading %}Profillar{% endblock %}
-{% block subheading %}<div class="sub">{{ profiles | length }} / {{ limit }} ta profil ishlatilgan</div>{% endblock %}
+{% block subheading %}<div class="sub">
+  {{ profiles | length }} ta akkaunt ulangan{% if limit %} / {{ limit }} ta mumkin{% else %} · chegara yo‘q{% endif %}
+</div>{% endblock %}
 
 {% block content %}
 
@@ -167,7 +169,11 @@
   <div class="card">
     <div class="card-head">
       <div class="card-title">{{ icon('plus', 19) }} Yangi akkaunt ulash</div>
+      {% if limit %}
       <span class="badge badge-muted">{{ profiles | length }} / {{ limit }}</span>
+      {% else %}
+      <span class="badge badge-gold">{{ icon('sparkles', 12) }} Cheksiz</span>
+      {% endif %}
     </div>
 
     <div class="tabs">
@@ -210,7 +216,10 @@
 {% else %}
   <div class="alert alert-warn">
     {{ icon('alert', 19) }}
-    <div>Profillar chegarasiga yetdingiz ({{ limit }} ta). Yangi qo‘shish uchun eskisini o‘chiring.</div>
+    <div>
+      Akkauntlar chegarasiga yetdingiz ({{ limit }} ta). Yangi qo‘shish uchun eskisini
+      o‘chiring yoki administrator chegarani oshirsin.
+    </div>
   </div>
 {% endif %}
 

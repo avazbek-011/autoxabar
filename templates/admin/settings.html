@@ -69,9 +69,12 @@
           <div class="hint">Yangi profil uchun bepul</div>
         </div>
         <div class="field">
-          <label class="label" for="maxp">Maks. profil / foydalanuvchi</label>
-          <input class="input" id="maxp" name="max_profiles_per_user" type="number" min="1" max="500"
+          <label class="label" for="maxp">Maks. akkaunt / foydalanuvchi</label>
+          <input class="input" id="maxp" name="max_profiles_per_user" type="number" min="0" max="10000"
                  value="{{ s.max_profiles_per_user }}">
+          <div class="hint">
+            <b>0</b> yozsangiz — cheksiz. Har bir akkaunt uchun alohida obuna to‘lanadi.
+          </div>
         </div>
       </div>
 

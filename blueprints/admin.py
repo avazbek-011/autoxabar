@@ -433,8 +433,9 @@ def settings():
             "tax_percent": request.form.get("tax_percent") or "10",
             "acquiring_percent": request.form.get("acquiring_percent") or "1",
             "trial_days": safe_int(request.form.get("trial_days"), 3, 0, 90),
+            # 0 = cheksiz
             "max_profiles_per_user": safe_int(
-                request.form.get("max_profiles_per_user"), 10, 1, 500
+                request.form.get("max_profiles_per_user"), 50, 0, 10000
             ),
             "telegram_engine": (request.form.get("telegram_engine") or "auto"),
             "registration_open": "1" if request.form.get("registration_open") else "0",

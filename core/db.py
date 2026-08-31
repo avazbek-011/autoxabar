@@ -451,7 +451,7 @@ DEFAULT_SETTINGS = {
     "registration_open": "1",
     "maintenance_note": "",
     "free_plan_enabled": "1",
-    "max_profiles_per_user": "10",
+    "max_profiles_per_user": "0",   # 0 = cheksiz
     "announce": "",
     "bank_name": "",
     "bank_account": "",

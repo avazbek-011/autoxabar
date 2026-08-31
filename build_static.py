@@ -39,6 +39,30 @@ APP_ROUTES = [
 ]
 
 
+NOTICE_PAGE = """<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xizmat tez orada — VIPADSUZ</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/app.css">
+<link rel="icon" href="static/img/logo.svg" type="image/svg+xml">
+</head><body>
+<div class="auth-wrap"><div class="auth-card center">
+  <img src="static/img/logo.svg" width="62" height="62" alt="VIPADSUZ" style="margin:0 auto 18px">
+  <h2 class="mb">Ro&#8216;yxatdan o&#8216;tish tez orada</h2>
+  <p class="muted mb-lg">
+    Bu sahifa &mdash; xizmatning tanishtiruv ko&#8216;rinishi. Ro&#8216;yxatdan o&#8216;tish va
+    akkaunt ulash uchun xizmat serverda ishga tushirilishi kerak.
+    Ishga tushishi haqida xabar beramiz.
+  </p>
+  <a href="{{HOME}}" class="btn btn-primary btn-block">Bosh sahifaga qaytish</a>
+  <div class="auth-foot"><a href="aloqa.html">Aloqa</a> &middot; <a href="narxlar.html">Narxlar</a></div>
+</div></div>
+</body></html>
+"""
+
+
 def rewrite(html, app_url):
     """Havolalarni statik saytga moslaydi."""
     # 1) Statik fayllar: /static/... -> static/...  (nisbiy yo'l)
@@ -73,8 +97,8 @@ def rewrite(html, app_url):
 
 
 def main():
-    # Haqiqiy dastur manzili berilmasa, tugmalar aloqa sahifasiga olib boradi
-    app_url = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "aloqa.html"
+    # Haqiqiy dastur manzili berilmasa, tugmalar tushuntirish sahifasiga boradi
+    app_url = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "kirish.html"
 
     from app import app
 
@@ -104,6 +128,13 @@ def main():
         ignore=shutil.ignore_patterns("uploads", "*.pyc", "__pycache__"),
     )
     print("  static/        -> docs/static/")
+
+    # --- Dastur manzili yo'q bo'lsa, tushuntirish sahifasi ---
+    if app_url == "kirish.html":
+        notice = NOTICE_PAGE.replace("{{HOME}}", "index.html")
+        with open(os.path.join(OUT, "kirish.html"), "w", encoding="utf-8") as fh:
+            fh.write(notice)
+        print("  {:<14} -> docs/kirish.html".format("(tushuntirish)"))
 
     # --- Jekyll bu papkani qayta ishlamasin ---
     open(os.path.join(OUT, ".nojekyll"), "w").close()

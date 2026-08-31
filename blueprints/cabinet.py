@@ -134,6 +134,21 @@ def api_live():
     )
 
 
+# ---------------------------------------------------- Akkaunt chegarasi
+def profile_limit():
+    """Foydalanuvchi ulashi mumkin bo'lgan akkauntlar soni. 0 = cheksiz."""
+    return get_setting_int("max_profiles_per_user", 50)
+
+
+def limit_reached(user_id):
+    """Chegaraga yetdimi? (limit, hozirgi_son, yetdimi)"""
+    limit = profile_limit()
+    count = scalar("SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user_id,))
+    if limit <= 0:                      # 0 yoki manfiy = cheksiz
+        return 0, count, False
+    return limit, count, count >= limit
+
+
 # ---------------------------------------------------- Telegram cheklovi
 def _flood_key(phone):
     return "tgflood:" + phone
@@ -169,12 +184,12 @@ def profiles():
         "WHERE p.user_id = ? ORDER BY p.id DESC",
         (uid,),
     )
-    limit = get_setting_int("max_profiles_per_user", 10)
+    limit, count, reached = limit_reached(uid)
     return render_template(
         "cabinet/profiles.html",
         profiles=rows,
         limit=limit,
-        can_add=len(rows) < limit,
+        can_add=not reached,
         demo=tg.is_demo(),
         connect=session.get("tg_connect"),
     )
@@ -185,10 +200,10 @@ def profiles():
 def profile_connect():
     """1-qadam: telefon raqamiga Telegram kodi yuboriladi."""
     user = current_user()
-    limit = get_setting_int("max_profiles_per_user", 10)
-    count = scalar("SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user["id"],))
-    if count >= limit:
-        flash("Profillar chegarasiga yetdingiz ({} ta)".format(limit), "error")
+    limit, count, reached = limit_reached(user["id"])
+    if reached:
+        flash("Akkauntlar chegarasiga yetdingiz ({} ta). Administrator "
+              "chegarani oshirishi mumkin".format(limit), "error")
         return redirect(url_for("cabinet.profiles"))
 
     phone = normalize_phone(request.form.get("phone"))
@@ -311,10 +326,10 @@ def profile_connect_cancel():
 def profile_qr_start():
     """QR orqali ulashni boshlaydi."""
     user = current_user()
-    limit = get_setting_int("max_profiles_per_user", 10)
-    count = scalar("SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user["id"],))
-    if count >= limit:
-        flash("Profillar chegarasiga yetdingiz ({} ta)".format(limit), "error")
+    limit, count, reached = limit_reached(user["id"])
+    if reached:
+        flash("Akkauntlar chegarasiga yetdingiz ({} ta). Administrator "
+              "chegarani oshirishi mumkin".format(limit), "error")
         return redirect(url_for("cabinet.profiles"))
 
     try:
