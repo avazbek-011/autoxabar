@@ -60,15 +60,19 @@ services:
         value: "3"
 
       # --- Payme (keyinroq to'ldiriladi) ---
+      # Payme keyinroq qo'shiladi — hozir bo'sh
       - key: PAYME_MERCHANT_ID
-        sync: false
+        value: ""
       - key: PAYME_KEY
-        sync: false
+        value: ""
       - key: PAYME_SUBSCRIBE_ID
-        sync: false
+        value: ""
       - key: PAYME_SUBSCRIBE_KEY
-        sync: false
+        value: ""
 
-      # --- Manzil (deploydan keyin haqiqiy havola bilan almashtiring) ---
+      # --- Manzil: Render o'zi to'ldiradi ---
       - key: BASE_URL
-        sync: false
+        fromService:
+          type: web
+          name: autoxabar
+          property: hostport
