@@ -439,6 +439,31 @@ python app.py
 
 Manzil: **http://127.0.0.1:5000** — faqat shu kompyuterda ochiladi.
 
+### Docker bilan
+
+Docker Desktop o'rnatilgan bo'lsa, Python va kutubxonalarni alohida
+o'rnatish shart emas. Loyiha papkasida bitta buyruq:
+
+```
+docker compose up -d --build
+```
+
+Manzil o'sha: **http://127.0.0.1:5000**
+
+| Buyruq | Nima qiladi |
+|---|---|
+| `docker compose logs -f` | loglarni jonli ko'rsatadi (Ctrl+C bilan chiqiladi) |
+| `docker compose restart` | qayta ishga tushiradi |
+| `docker compose down` | to'xtatadi, **ma'lumotlar saqlanadi** |
+| `docker compose up -d --build` | kod o'zgargandan keyin yangilaydi |
+
+Baza, Telegram sessiyalari va yuklangan rasmlar Docker volume'larida
+saqlanadi — konteynerni o'chirsangiz ham yo'qolmaydi.
+
+⚠️ `docker compose down -v` buyrug'idagi **`-v`** volume'larni ham
+o'chiradi: foydalanuvchilar, to'lovlar va Telegram sessiyalari butunlay
+yo'qoladi. Faqat noldan boshlamoqchi bo'lsangiz ishlating.
+
 ### Vaqtinchalik ommaviy havola
 
 Ish stolidagi **`SAYTNI-ISHGA-TUSHIRISH.bat`** faylini ikki marta bosing.

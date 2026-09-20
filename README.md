@@ -14,6 +14,34 @@ barcha guruhlarga belgilangan interval bilan avtomatik yuboradi.
 
 ## 1. Ishga tushirish
 
+### Docker bilan (tavsiya etiladi)
+
+```bash
+copy .env.example .env
+```
+
+```bash
+docker compose up -d --build
+```
+
+Manzil: **http://127.0.0.1:5000** · loglar: `docker compose logs -f`
+
+Ma‘lumotlar ikkita volume‘da saqlanadi va `docker compose down` dan keyin
+ham joyida qoladi:
+
+| Volume | Nima saqlanadi |
+|---|---|
+| `autoxabar-data` | SQLite bazasi va Telegram sessiyalari |
+| `autoxabar-uploads` | foydalanuvchi yuklagan rasmlar |
+
+To‘xtatish: `docker compose down` · hamma narsani ma‘lumotlari bilan
+o‘chirish: `docker compose down -v`
+
+> `.env` fayli bo‘lmasa ham ishga tushadi, lekin `SECRET_KEY` va
+> `ADMIN_PASSWORD` tasodifiy bo‘lib qoladi — avval `.env` ni to‘ldiring.
+
+### Python bilan
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -167,6 +195,9 @@ blueprints/
   payme_bp.py           /api/payme kirish nuqtasi (ishlatilmaydi)
 templates/  static/     Jinja2 shablonlari va dizayn tizimi
 data/autoxabar.db       SQLite bazasi
+Dockerfile              konteyner: python:3.12-slim, gunicorn, root'siz
+docker-compose.yml      volume'lar bilan tayyor ishga tushirish
+.dockerignore           konteynerga tushmaydigan fayllar
 ```
 
 ---
@@ -225,6 +256,39 @@ shuning uchun waitress/gunicorn ostida ham avtomatik ishlaydi.
 > Bir nechta ishchi jarayon (worker) ishlatsangiz, ulardan faqat bittasida
 > rejalashtiruvchi yonishi kerak — qolganlariga `.env` orqali
 > `RUN_SCHEDULER=0` bering, aks holda xabarlar takroran yuboriladi.
+
+### Docker bilan serverga qo‘yish
+
+```bash
+docker compose up -d --build
+```
+
+Konteyner `--workers 1 --threads 8` bilan ishlaydi va root huquqisiz
+(`uid 10001`) yuradi. HTTPS uchun oldiga Caddy yoki nginx qo‘ying —
+Click faqat HTTPS endpoint bilan ishlaydi.
+
+**Konteynerni ko‘paytirmang.** `--scale` yoki `replicas` ishlatilsa, fon
+vazifalari har bir nusxada qaytadan ishlaydi va bitta profil bir necha marta
+xabar yuboradi — Telegram akkaunti bloklanishi mumkin. Yuklama oshsa
+`--threads` ni oshiring.
+
+Yangilash:
+
+```bash
+git pull && docker compose up -d --build
+```
+
+Baza va sessiyalar volume‘da bo‘lgani uchun yangilashda yo‘qolmaydi.
+Zaxira nusxa:
+
+```bash
+docker run --rm -v autoxabar_autoxabar-data:/data -v "%cd%":/backup alpine tar czf /backup/autoxabar-backup.tar.gz -C /data .
+```
+
+> Render‘da hozir Python runtime ishlatiladi (`render.yaml`). Docker‘ga
+> o‘tmoqchi bo‘lsangiz, `runtime: python` ni `runtime: docker` ga
+> almashtiring va `buildCommand` / `startCommand` qatorlarini o‘chiring —
+> qolgan sozlamalar o‘zgarishsiz ishlaydi.
 
 ---
 

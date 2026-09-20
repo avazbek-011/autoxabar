@@ -1,0 +1,44 @@
+# ============================================================
+#  AutoXabar / VIPADSUZ
+#
+#    docker compose up -d --build     ishga tushirish
+#    docker compose logs -f           loglarni ko'rish
+#    docker compose down              to'xtatish (ma'lumotlar saqlanadi)
+#
+#  Sozlamalar .env faylidan o'qiladi. Fayl bo'lmasa ham ishga tushadi,
+#  lekin SECRET_KEY va ADMIN_PASSWORD tasodifiy bo'lib qoladi —
+#  avval `copy .env.example .env` qilib to'ldirgan ma'qul.
+# ============================================================
+services:
+  autoxabar:
+    build: .
+    image: autoxabar:latest
+    container_name: autoxabar
+    restart: unless-stopped
+
+    env_file:
+      - path: .env
+        required: false
+
+    environment:
+      # Bu uchtasi volume'larga bog'liq — .env dagi qiymatdan ustun turadi
+      DATA_DIR: /data
+      SESSION_DIR: /data/sessions
+      PORT: "5000"
+
+    ports:
+      - "5000:5000"
+
+    volumes:
+      # Baza va Telegram sessiyalari — yo'qolsa hamma narsa yo'qoladi
+      - autoxabar-data:/data
+      # Foydalanuvchi yuklagan rasmlar
+      - autoxabar-uploads:/app/static/uploads
+
+    # DIQQAT: `deploy.replicas` yoki `docker compose up --scale` ishlatmang.
+    # Fon vazifalari (xabar yuborish sikli) har bir nusxada qaytadan ishlaydi
+    # va bitta profil bir necha marta xabar yuborib, akkaunt bloklanishi mumkin.
+
+volumes:
+  autoxabar-data:
+  autoxabar-uploads:

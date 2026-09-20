@@ -1,0 +1,60 @@
+# ============================================================
+#  Konteyner ichiga tushmasligi kerak bo'lgan narsalar
+# ============================================================
+
+# --- Maxfiy ---
+# .env konteynerga yozilmaydi: u --env-file yoki compose orqali beriladi.
+.env
+.env.*
+!.env.example
+
+# --- Doimiy ma'lumotlar (volume'da turadi) ---
+data/
+sessions/
+static/uploads/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.session
+*.session-journal
+
+# --- Git va CI ---
+.git/
+.gitignore
+.github/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Ishlab chiqish vositalari ---
+.claude/
+.idea/
+.vscode/
+tools/
+run.bat
+
+# --- Statik GitHub Pages nusxasi (ishga tushirishda kerak emas) ---
+docs/
+
+# --- Boshqa platformalar uchun sozlamalar ---
+render.yaml
+Procfile
+runtime.txt
+
+# --- Loglar va vaqtinchalik ---
+*.log
+logs/
+tmp/
+.DS_Store
+Thumbs.db
+desktop.ini
