@@ -65,6 +65,8 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
+      # Cloudflare Origin Certificate (nginx/certs/origin.pem + origin.key)
+      - ./nginx/certs:/etc/nginx/certs:ro
       # Statik fayllarni nginx to'g'ridan-to'g'ri beradi
       - ./static:/srv/static:ro
       - autoxabar-uploads:/srv/static/uploads:ro
@@ -80,7 +82,7 @@ services:
 
   # Sertifikat olish uchun, doimiy ishlamaydi. Ishlatish:
   #   docker compose --profile certbot run --rm certbot certonly \
-  #     --webroot -w /var/www/certbot -d sizning-domen.uz \
+  #     --webroot -w /var/www/certbot -d avtoxabar.vipads.uz \
   #     --email siz@pochta.uz --agree-tos --no-eff-email
   certbot:
     image: certbot/certbot:latest

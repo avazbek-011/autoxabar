@@ -358,6 +358,11 @@ Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
 > tarifda baza saqlanmaydi — to'lovlar tarixi har deployda yo'qoladi.
 > Ketma-ketlik: **Starter tarif → doimiy disk → keyin Click**.
 
+> **Manzil:** sayt `https://avtoxabar.vipads.uz` domenida ishlaydi.
+> Click manzillari ham shu domen bilan yoziladi. Domen hali sozlanmagan
+> bo'lsa, avval uni ishga tushiring (README, 7-bo'lim) — Click faqat
+> ishlayotgan HTTPS manzilni qabul qiladi.
+
 ### Click kabinetida
 
 1. Click merchant kabinetiga kiring (<https://merchant.click.uz>)
@@ -365,8 +370,8 @@ Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
 3. Servis sozlamalarida ikkita manzilni ko'rsating:
 
 ```
-Prepare URL   https://autoxabar-7tbz.onrender.com/api/click/prepare
-Complete URL  https://autoxabar-7tbz.onrender.com/api/click/complete
+Prepare URL   https://avtoxabar.vipads.uz/api/click/prepare
+Complete URL  https://avtoxabar.vipads.uz/api/click/complete
 ```
 
 > Bu ikkita manzilni admin panelning **Tizim holati** bo'limidan ham
@@ -567,7 +572,8 @@ Manba: https://my.telegram.org → API development tools
 |---|---|
 | Kod (GitHub) | https://github.com/avazbek-011/autoxabar |
 | Tanishtiruv sahifasi | https://avazbek-011.github.io/autoxabar/ |
-| Doimiy sayt | https://autoxabar-7tbz.onrender.com |
+| Doimiy sayt | https://avtoxabar.vipads.uz |
+| Eski manzil (Render) | https://autoxabar-7tbz.onrender.com |
 
 ### Maxfiy fayllar — hech qachon tarqatmang
 

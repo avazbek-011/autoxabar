@@ -102,8 +102,8 @@ ikkita manzilni ko‘rsatish kerak:
 
 | Maydon | Manzil |
 |---|---|
-| **Prepare URL** (action = 0) | `https://sizning-domeningiz.uz/api/click/prepare` |
-| **Complete URL** (action = 1) | `https://sizning-domeningiz.uz/api/click/complete` |
+| **Prepare URL** (action = 0) | `https://avtoxabar.vipads.uz/api/click/prepare` |
+| **Complete URL** (action = 1) | `https://avtoxabar.vipads.uz/api/click/complete` |
 
 Buyurtma raqami sifatida `payments.id` ishlatiladi — Click uni
 `merchant_trans_id` maydonida qaytaradi, alohida sozlash shart emas.
@@ -206,6 +206,9 @@ nginx/
   conf.d/autoxabar.conf             HTTP (80) — faol
   conf.d/autoxabar-ssl.conf.example HTTPS (443) — nomini o'zgartirib yoqiladi
   snippets/app.conf                 proxy va statik fayl qoidalari (umumiy)
+  snippets/cloudflare-real-ip.conf  CF-Connecting-IP dan haqiqiy mijoz IP si
+  snippets/cloudflare-only.conf     ixtiyoriy: faqat Cloudflare'dan qabul qilish
+  certs/                            Cloudflare Origin Certificate (gitignore'da)
 ```
 
 ---
@@ -282,30 +285,66 @@ si yoziladi va Click‘dan qaytish manzili `http://` bo‘lib qoladi.
 Ilovani to‘g‘ridan-to‘g‘ri ochsangiz `TRUSTED_PROXIES=0` qiling, aks
 holda har kim o‘z IP sini soxtalashtira oladi.
 
-#### HTTPS yoqish (Click uchun shart)
+#### Domen va HTTPS: avtoxabar.vipads.uz (Cloudflare orqali)
 
-Domen serverga yo‘naltirilgan bo‘lishi kerak. Uch qadam:
+Sayt Cloudflare‘ning to‘q sariq buluti ostida ishlaydi:
 
-```bash
-docker compose --profile certbot run --rm certbot certonly --webroot -w /var/www/certbot -d sizning-domen.uz --email siz@pochta.uz --agree-tos --no-eff-email
+```
+Mijoz --HTTPS--> Cloudflare --HTTPS--> nginx --HTTP--> gunicorn
 ```
 
-So‘ng `nginx/conf.d/autoxabar-ssl.conf.example` ichidagi yo‘riqnomaga
-amal qiling: domen nomini almashtirib, faylni `autoxabar-ssl.conf` deb
-nomlang va `autoxabar.conf` dagi `include` ni HTTPS redirect bilan
-almashtiring. Keyin:
+Brauzer ko‘radigan sertifikatni Cloudflare beradi. nginx‘dagi
+sertifikat faqat Cloudflare bilan server orasidagi ulanish uchun, shuning
+uchun **Cloudflare Origin Certificate** ishlatiladi — u 15 yil amal
+qiladi va yangilanishi shart emas (certbot kerak emas).
 
-```bash
-docker compose restart nginx
+**1. DNS.** Cloudflare → DNS → Records → Add record:
+`A` · `avtoxabar` · `<server IP>` · Proxy status **Proxied** (to‘q sariq).
+
+**2. Origin Certificate.** Cloudflare → SSL/TLS → Origin Server
+→ Create Certificate. Hostname: `avtoxabar.vipads.uz`. Berilgan ikki
+matnni serverga saqlang:
+
+```
+nginx/certs/origin.pem     <- Origin Certificate
+nginx/certs/origin.key     <- Private Key   (chmod 600)
 ```
 
-Oxirida `.env` da `BASE_URL` ni `https://sizning-domen.uz` qilib qo‘ying.
+Bu papka `.gitignore` da — kalitlar repozitoriyga tushmaydi.
 
-Sertifikat 90 kunda tugaydi — yangilashni cron ga qo‘ying:
+**3. SSL rejimi.** Cloudflare → SSL/TLS → Overview →
+**Full (strict)**.
+
+> «Flexible» qo‘ymang: Cloudflare serverga HTTP bilan murojaat qiladi,
+> nginx esa HTTPS ga yo‘naltiradi — cheksiz redirect halqasi hosil
+> bo‘ladi va sayt umuman ochilmay qoladi.
+
+**4. nginx.** `nginx/conf.d/autoxabar-ssl.conf.example` ni
+`autoxabar-ssl.conf` deb nomlang, `autoxabar.conf` dagi izohga amal qilib
+HTTPS redirect‘ni yoqing, so‘ng `docker compose restart nginx`.
+
+**5. Ilova.** `.env` da `BASE_URL=https://avtoxabar.vipads.uz`.
+Click kabinetidagi manzillar:
+
+```
+https://avtoxabar.vipads.uz/api/click/prepare
+https://avtoxabar.vipads.uz/api/click/complete
+```
+
+**Haqiqiy mijoz IP si.** Cloudflare orqasida hamma so‘rov Cloudflare
+serverlaridan keladi. `nginx/snippets/cloudflare-real-ip.conf` haqiqiy IP
+ni `CF-Connecting-IP` sarlavhasidan oladi va bunga faqat Cloudflare
+diapazonlaridan kelgan so‘rovlarda ishonadi. Diapazonlar o‘zgarsa
+yangilang:
 
 ```bash
-docker compose --profile certbot run --rm certbot renew && docker compose exec nginx nginx -s reload
+curl https://www.cloudflare.com/ips-v4 && curl https://www.cloudflare.com/ips-v6
 ```
+
+**Ixtiyoriy himoya.** Server IP sini topib olgan odam Cloudflare‘ni
+chetlab o‘tmasligi uchun `nginx/snippets/cloudflare-only.conf` ni
+HTTPS blokiga include qiling — faqat DNS yozuvi «Proxied» ekaniga
+ishonch hosil qilgandan keyin, aks holda sayt o‘zingizga ham yopiladi.
 
 **Konteynerni ko‘paytirmang.** `--scale` yoki `replicas` ishlatilsa, fon
 vazifalari har bir nusxada qaytadan ishlaydi va bitta profil bir necha marta
@@ -382,8 +421,8 @@ Shundan keyin baza deploylardan keyin ham saqlanadi.
 > Avval Starter tarif + doimiy disk, keyin Click.
 >
 > Click servisidagi manzillar:
-> `https://sizning-manzilingiz.onrender.com/api/click/prepare`
-> `https://sizning-manzilingiz.onrender.com/api/click/complete`
+> `https://avtoxabar.vipads.uz/api/click/prepare`
+> `https://avtoxabar.vipads.uz/api/click/complete`
 
 ---
 

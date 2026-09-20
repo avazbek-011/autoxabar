@@ -21,6 +21,10 @@ data/*
 *.sqlite
 *.sqlite3
 
+# TLS kalitlari (Cloudflare Origin Certificate)
+nginx/certs/*
+!nginx/certs/.gitkeep
+
 # Foydalanuvchi yuklagan fayllar
 static/uploads/*
 !static/uploads/.gitkeep

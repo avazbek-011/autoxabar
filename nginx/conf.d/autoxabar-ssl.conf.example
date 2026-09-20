@@ -1,40 +1,67 @@
 # ============================================================
-#  HTTPS (443-port)
+#  HTTPS (443-port) — avtoxabar.vipads.uz
 #
-#  nginx faqat `*.conf` fayllarni o'qiydi, shuning uchun bu fayl
-#  hozir ishlamaydi. Yoqish uchun:
+#  Sayt Cloudflare'ning to'q sariq buluti ostida. Ya'ni:
 #
-#   1) Sertifikat oling (domen serverga yo'naltirilgan bo'lishi shart):
+#    Mijoz --HTTPS--> Cloudflare --HTTPS--> shu nginx --HTTP--> ilova
 #
-#      docker compose --profile certbot run --rm certbot certonly \
-#        --webroot -w /var/www/certbot -d sizning-domen.uz \
-#        --email siz@pochta.uz --agree-tos --no-eff-email
+#  Brauzer ko'radigan sertifikatni Cloudflare beradi. Bu yerdagi
+#  sertifikat esa faqat Cloudflare bilan server orasidagi ulanish
+#  uchun — shuning uchun **Cloudflare Origin Certificate** ishlatiladi
+#  (15 yil amal qiladi, yangilash kerak emas).
 #
-#   2) Quyidagi 3 joydagi `sizning-domen.uz` ni o'zingiznikiga almashtiring
+#  nginx faqat `*.conf` fayllarni o'qiydi, shuning uchun bu fayl hozir
+#  ishlamaydi. Yoqish tartibi:
 #
-#   3) Faylni qayta nomlang:  autoxabar-ssl.conf
+#  ── 1. Cloudflare'da DNS ────────────────────────────────────
+#     DNS > Records > Add record
+#       Type: A   Name: avtoxabar   Content: <server IP>
+#       Proxy status: **Proxied** (to'q sariq bulut)
 #
-#   4) autoxabar.conf dagi `include` ni izohga oling va uning o'rniga
-#      `return 301 https://$host$request_uri;` ni oching
+#  ── 2. Cloudflare'da Origin Certificate ─────────────────────
+#     SSL/TLS > Origin Server > Create Certificate
+#     Hostnames: avtoxabar.vipads.uz
+#     Ikki matn beriladi — ularni serverda shu fayllarga saqlang:
+#       nginx/certs/origin.pem   <- Origin Certificate
+#       nginx/certs/origin.key   <- Private Key
 #
-#   5) docker compose restart nginx
+#     Kalit faylini himoyalang:
+#       chmod 600 nginx/certs/origin.key
 #
-#   6) .env da BASE_URL ni https:// bilan yozing
+#  ── 3. Cloudflare'da SSL rejimi ─────────────────────────────
+#     SSL/TLS > Overview > **Full (strict)**
 #
-#  Sertifikatni yangilash (90 kunda bir, cron ga qo'ying):
-#      docker compose --profile certbot run --rm certbot renew
-#      docker compose exec nginx nginx -s reload
+#     ⚠️ «Flexible» QO'YMANG: Cloudflare serverga HTTP bilan murojaat
+#     qiladi, nginx esa HTTPS ga yo'naltiradi — cheksiz redirect
+#     halqasi hosil bo'ladi va sayt ochilmay qoladi.
+#
+#  ── 4. Shu faylni yoqish ────────────────────────────────────
+#     Nomini o'zgartiring:  autoxabar-ssl.conf
+#
+#     So'ng autoxabar.conf da "include ... app.conf" qatorini izohga
+#     olib, uning ostidagi "location /" blokini izohdan chiqaring
+#     (redirect server darajasida emas, aynan location ichida
+#     bo'lishi kerak — sabab o'sha faylda yozilgan).
+#
+#       docker compose restart nginx
+#
+#  ── 5. Ilova manzili ────────────────────────────────────────
+#     .env da:  BASE_URL=https://avtoxabar.vipads.uz
+#     Click kabinetidagi manzillar:
+#       https://avtoxabar.vipads.uz/api/click/prepare
+#       https://avtoxabar.vipads.uz/api/click/complete
 # ============================================================
 server {
-    listen      443 ssl;
-    listen      [::]:443 ssl;
+    listen      443 ssl default_server;
+    listen      [::]:443 ssl default_server;
     http2       on;
-    server_name sizning-domen.uz;
+    server_name avtoxabar.vipads.uz;
 
     server_tokens off;
 
-    ssl_certificate     /etc/letsencrypt/live/sizning-domen.uz/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/sizning-domen.uz/privkey.pem;
+    # Cloudflare Origin Certificate (2-qadam)
+    ssl_certificate     /etc/nginx/certs/origin.pem;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
 
     ssl_protocols             TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
@@ -42,9 +69,19 @@ server {
     ssl_session_timeout       1d;
     ssl_session_tickets       off;
 
+    # Cloudflare orqasida haqiqiy mijoz IP sini olish
+    include /etc/nginx/snippets/cloudflare-real-ip.conf;
+
+    # IXTIYORIY, lekin tavsiya etiladi: server IP sini topib olgan odam
+    # Cloudflare himoyasini chetlab o'ta olmasin. Avval DNS yozuvi
+    # «Proxied» ekaniga ishonch hosil qiling — snippet ichidagi
+    # ogohlantirishni o'qing.
+    # include /etc/nginx/snippets/cloudflare-only.conf;
+
     # Brauzerga "bu saytga faqat HTTPS bilan kir" deb aytadi.
     # DIQQAT: bir marta yuborilgach brauzer buni bir yil eslab qoladi —
     # HTTPS ishlayotganiga ishonch hosil qilgandan keyin yoqing.
+    # (Cloudflare'ning o'zida ham «Always Use HTTPS» bor.)
     add_header Strict-Transport-Security "max-age=31536000" always;
 
     include /etc/nginx/snippets/app.conf;
