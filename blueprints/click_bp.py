@@ -1,9 +1,14 @@
 """Click uchun kirish nuqtalari (SHOP API).
 
-  POST /api/click/prepare   — to'lovni tekshirish va band qilish (action = 0)
-  POST /api/click/complete  — to'lovni yakunlash (action = 1)
+Click ikki bosqichda so'rov yuboradi va ularni `action` maydoni orqali
+ajratadi. Kassa sozlamasida bitta manzil ko'rsatilsa ham, alohida ikkita
+manzil ko'rsatilsa ham ishlashi uchun uchala yo'l ham mavjud:
 
-Diqqat: ikkala yo'l ham CSRF tekshiruvidan ozod (app.py -> CSRF_EXEMPT).
+  POST /api/payments/click/webhook  — bitta manzil, action bo'yicha ajratadi
+  POST /api/click/prepare           — faqat Prepare  (action = 0)
+  POST /api/click/complete          — faqat Complete (action = 1)
+
+Diqqat: bu yo'llar CSRF tekshiruvidan ozod (app.py -> CSRF_EXEMPT).
 Haqiqiylik `sign_string` (MD5) orqali tekshiriladi — services/click.py.
 """
 import logging
@@ -11,7 +16,15 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from services import billing
-from services.click import ERR_UPDATE_FAILED, ShopAPI, reply
+from services.click import (
+    ACTION_COMPLETE,
+    ACTION_PREPARE,
+    ERR_ACTION,
+    ERR_UPDATE_FAILED,
+    ShopAPI,
+    reply,
+    to_int,
+)
 
 log = logging.getLogger("click.bp")
 
@@ -45,8 +58,7 @@ def _params():
     return data
 
 
-def _handle(stage, func):
-    params = _params()
+def _handle(stage, func, params):
     try:
         return jsonify(func(params))
     except Exception:
@@ -55,11 +67,31 @@ def _handle(stage, func):
         return jsonify(reply(params, ERR_UPDATE_FAILED))
 
 
+@bp.route("/api/payments/click/webhook", methods=["POST"])
+def webhook():
+    """Bitta manzil: Prepare va Complete `action` bo'yicha ajratiladi.
+
+    Click kassasida Prepare URL va Complete URL sifatida aynan shu bitta
+    manzilni ko'rsatish mumkin — qaysi bosqich ekanini so'rovning o'zi
+    aytadi (action = 0 yoki 1).
+    """
+    params = _params()
+    action = to_int(params.get("action"), -1)
+
+    if action == ACTION_PREPARE:
+        return _handle("Prepare", shop.prepare, params)
+    if action == ACTION_COMPLETE:
+        return _handle("Complete", shop.complete, params)
+
+    log.warning("Click webhook: noma'lum action=%r", params.get("action"))
+    return jsonify(reply(params, ERR_ACTION))
+
+
 @bp.route("/api/click/prepare", methods=["POST"])
 def prepare():
-    return _handle("Prepare", shop.prepare)
+    return _handle("Prepare", shop.prepare, _params())
 
 
 @bp.route("/api/click/complete", methods=["POST"])
 def complete():
-    return _handle("Complete", shop.complete)
+    return _handle("Complete", shop.complete, _params())

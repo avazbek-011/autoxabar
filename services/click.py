@@ -74,7 +74,7 @@ def _float(value, default=0.0):
         return default
 
 
-def _int(value, default=0):
+def to_int(value, default=0):
     try:
         return int(float(str(value).strip()))
     except (TypeError, ValueError):
@@ -84,7 +84,7 @@ def _int(value, default=0):
 def reply(params, code, extra=None):
     """Click kutgan JSON javobni tuzadi."""
     out = {
-        "click_trans_id": _int(params.get("click_trans_id")),
+        "click_trans_id": to_int(params.get("click_trans_id")),
         "merchant_trans_id": str(params.get("merchant_trans_id") or ""),
         "error": code,
         "error_note": NOTES.get(code, "Error"),
@@ -200,7 +200,7 @@ class ShopAPI:
         if not self.configured:
             log.error("Click kalitlari sozlanmagan — so'rov rad etildi")
             return ERR_BAD_REQUEST
-        if _int(params.get("action"), -1) != action:
+        if to_int(params.get("action"), -1) != action:
             return ERR_ACTION
         if not self.check_sign(params, action):
             log.warning(
@@ -293,7 +293,7 @@ class ShopAPI:
         tx = self._tx(click_trans_id)
         if not tx:
             return self._reply(params, ERR_NO_TRANSACTION)
-        if _int(params.get("merchant_prepare_id"), -1) != int(tx["id"]):
+        if to_int(params.get("merchant_prepare_id"), -1) != int(tx["id"]):
             return self._reply(params, ERR_NO_TRANSACTION)
 
         payment = query(

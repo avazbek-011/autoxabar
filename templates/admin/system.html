@@ -54,18 +54,27 @@
   <div class="card">
     <div class="card-head"><div class="card-title">{{ icon('link', 19) }} Click sozlash</div></div>
     <p class="small muted mb">
-      Click merchant kabinetida servis yaratganda quyidagi ikkita manzilni kiriting:
+      Click merchant kabinetida <b>Prepare URL</b> va <b>Complete URL</b> maydonlarining
+      <b>ikkalasiga ham</b> shu bitta manzilni yozing — qaysi bosqich ekanini
+      so‘rovning o‘zi (<span class="mono">action</span>) aytadi:
     </p>
-    <p class="small muted">Prepare URL (action = 0)</p>
     <div class="copy-box mb">
-      <span class="grow">{{ click_prepare_url }}</span>
-      <button class="btn-icon" data-copy="{{ click_prepare_url }}">{{ icon('copy', 16) }}</button>
+      <span class="grow">{{ click_webhook_url }}</span>
+      <button class="btn-icon" data-copy="{{ click_webhook_url }}">{{ icon('copy', 16) }}</button>
     </div>
-    <p class="small muted">Complete URL (action = 1)</p>
-    <div class="copy-box mb">
-      <span class="grow">{{ click_complete_url }}</span>
-      <button class="btn-icon" data-copy="{{ click_complete_url }}">{{ icon('copy', 16) }}</button>
-    </div>
+    <details class="mb">
+      <summary class="small muted">Alohida ikkita manzil kerak bo‘lsa</summary>
+      <p class="small muted mt">Prepare URL (action = 0)</p>
+      <div class="copy-box mb">
+        <span class="grow">{{ click_prepare_url }}</span>
+        <button class="btn-icon" data-copy="{{ click_prepare_url }}">{{ icon('copy', 16) }}</button>
+      </div>
+      <p class="small muted">Complete URL (action = 1)</p>
+      <div class="copy-box">
+        <span class="grow">{{ click_complete_url }}</span>
+        <button class="btn-icon" data-copy="{{ click_complete_url }}">{{ icon('copy', 16) }}</button>
+      </div>
+    </details>
     <p class="small muted mb">
       Buyurtma raqami sifatida <b>to‘lov ID</b> si ishlatiladi — Click uni
       <span class="mono">merchant_trans_id</span> maydonida qaytaradi.

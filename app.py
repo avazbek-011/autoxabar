@@ -35,7 +35,12 @@ log = logging.getLogger("app")
 ASSET_VERSION = "1.0.0"
 
 # CSRF tekshiruvidan ozod yo'llar (tashqi xizmatlar chaqiradi)
-CSRF_EXEMPT = {"payme.merchant_endpoint", "click.prepare", "click.complete"}
+CSRF_EXEMPT = {
+    "payme.merchant_endpoint",
+    "click.webhook",
+    "click.prepare",
+    "click.complete",
+}
 
 
 def create_app():

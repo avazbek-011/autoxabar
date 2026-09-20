@@ -527,6 +527,7 @@ def system():
         telethon=tg.TELETHON_AVAILABLE,
         db_size=db_size,
         click_ready=click_svc.configured(),
+        click_webhook_url=config.BASE_URL + "/api/payments/click/webhook",
         click_prepare_url=config.BASE_URL + "/api/click/prepare",
         click_complete_url=config.BASE_URL + "/api/click/complete",
         payme_merchant=bool(config.PAYME_MERCHANT_ID and config.PAYME_KEY),
