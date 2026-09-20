@@ -24,11 +24,12 @@ copy .env.example .env
 docker compose up -d --build
 ```
 
-Manzil: **http://127.0.0.1** · loglar: `docker compose logs -f`
+Manzil: **http://127.0.0.1:8080** · loglar: `docker compose logs -f`
 
-Ikkita konteyner ko‘tariladi: **nginx** (80/443-port, statik fayllar va
-reverse-proxy) va **autoxabar** (gunicorn, faqat ichki tarmoqda).
-80-port band bo‘lsa `.env` ga `NGINX_HTTP_PORT=8080` yozing.
+Ikkita konteyner ko‘tariladi: **nginx** (statik fayllar va reverse-proxy)
+va **autoxabar** (gunicorn, faqat ichki tarmoqda). nginx `127.0.0.1:8080`
+da tinglaydi — tashqariga serverning o‘z nginx‘i chiqaradi
+(7-bo‘limga qarang). Portni `.env` dagi `APP_PORT` bilan o‘zgartirasiz.
 
 Ma‘lumotlar ikkita volume‘da saqlanadi va `docker compose down` dan keyin
 ham joyida qoladi:
@@ -100,10 +101,16 @@ CLICK_SECRET_KEY=<maxfiy kalit>
 Bu to‘rttasini Click merchant kabinetidan olasiz. Servis sozlamalarida
 ikkita manzilni ko‘rsatish kerak:
 
+Click Prepare va Complete ni `action` maydoni bilan ajratadi, shuning
+uchun **ikkala maydonga ham bitta manzil** yoziladi:
+
 | Maydon | Manzil |
 |---|---|
-| **Prepare URL** (action = 0) | `https://avtoxabar.vipads.uz/api/click/prepare` |
-| **Complete URL** (action = 1) | `https://avtoxabar.vipads.uz/api/click/complete` |
+| **Prepare URL** | `https://dns.vipads.uz/api/payments/click/webhook` |
+| **Complete URL** | `https://dns.vipads.uz/api/payments/click/webhook` |
+
+Alohida manzil kerak bo‘lsa `/api/click/prepare` va `/api/click/complete`
+ham ishlaydi.
 
 Buyurtma raqami sifatida `payments.id` ishlatiladi — Click uni
 `merchant_trans_id` maydonida qaytaradi, alohida sozlash shart emas.
@@ -195,20 +202,23 @@ blueprints/
   auth_bp.py            kirish / ro'yxat / parol
   cabinet.py            foydalanuvchi kabineti
   admin.py              admin panel va moliya
-  click_bp.py           /api/click/prepare va /api/click/complete
+  click_bp.py           /api/payments/click/webhook (+ prepare/complete)
   payme_bp.py           /api/payme kirish nuqtasi (ishlatilmaydi)
 templates/  static/     Jinja2 shablonlari va dizayn tizimi
 data/autoxabar.db       SQLite bazasi
 Dockerfile              konteyner: python:3.12-slim, gunicorn, root'siz
 docker-compose.yml      nginx + ilova, volume'lar bilan
 .dockerignore           konteynerga tushmaydigan fayllar
-nginx/
-  conf.d/autoxabar.conf             HTTP (80) — faol
-  conf.d/autoxabar-ssl.conf.example HTTPS (443) — nomini o'zgartirib yoqiladi
-  snippets/app.conf                 proxy va statik fayl qoidalari (umumiy)
-  snippets/cloudflare-real-ip.conf  CF-Connecting-IP dan haqiqiy mijoz IP si
-  snippets/cloudflare-only.conf     ixtiyoriy: faqat Cloudflare'dan qabul qilish
-  certs/                            Cloudflare Origin Certificate (gitignore'da)
+nginx/                            KONTEYNER ichidagi nginx
+  conf.d/00-forwarded.conf          X-Forwarded-Proto ni saqlab qolish
+  conf.d/autoxabar.conf             server bloki (faqat HTTP, 80)
+  snippets/app.conf                 proxy va statik fayl qoidalari
+  snippets/upstream-real-ip.conf    host nginx'dan haqiqiy mijoz IP si
+  snippets/cloudflare-real-ip.conf  HOST nginx uchun: CF-Connecting-IP
+  snippets/cloudflare-only.conf     HOST nginx uchun: faqat CF'dan qabul qilish
+nginx/host/                       SERVERNING O'Z nginx'i uchun namunalar
+  avtoxabar.vipads.uz.conf.example  sayt: TLS + Cloudflare + proxy
+  dns.vipads.uz-click.conf.example  Click webhook uchun location bloki
 ```
 
 ---
@@ -285,13 +295,29 @@ si yoziladi va Click‘dan qaytish manzili `http://` bo‘lib qoladi.
 Ilovani to‘g‘ridan-to‘g‘ri ochsangiz `TRUSTED_PROXIES=0` qiling, aks
 holda har kim o‘z IP sini soxtalashtira oladi.
 
-#### Domen va HTTPS: avtoxabar.vipads.uz (Cloudflare orqali)
+#### Domen va HTTPS
 
-Sayt Cloudflare‘ning to‘q sariq buluti ostida ishlaydi:
+Ikki domen, bitta server (`185.80.234.161`):
 
 ```
-Mijoz --HTTPS--> Cloudflare --HTTPS--> nginx --HTTP--> gunicorn
+Mijoz --HTTPS--> Cloudflare --> host nginx --> konteyner --> gunicorn
+                                avtoxabar.vipads.uz
+
+Click --HTTPS---------------->  host nginx --> konteyner --> gunicorn
+                                dns.vipads.uz/api/payments/click/webhook
 ```
+
+Docker to‘plami faqat `127.0.0.1:8080` da tinglaydi — tashqariga
+serverning o‘z nginx‘i (nginx/1.24, Ubuntu) chiqaradi. TLS ham,
+Cloudflare sozlamalari ham o‘sha yerda. Tayyor namunalar:
+
+| Fayl | Nima uchun |
+|---|---|
+| `nginx/host/avtoxabar.vipads.uz.conf.example` | sayt uchun to‘liq server bloki |
+| `nginx/host/dns.vipads.uz-click.conf.example` | Click webhook uchun `location` bloki |
+
+Ularni serverga `/etc/nginx/sites-available/` ga qo‘ying, ichidagi
+yo‘riqnomaga amal qiling, so‘ng `nginx -t && systemctl reload nginx`.
 
 Brauzer ko‘radigan sertifikatni Cloudflare beradi. nginx‘dagi
 sertifikat faqat Cloudflare bilan server orasidagi ulanish uchun, shuning
@@ -324,11 +350,10 @@ Bu papka `.gitignore` da — kalitlar repozitoriyga tushmaydi.
 HTTPS redirect‘ni yoqing, so‘ng `docker compose restart nginx`.
 
 **5. Ilova.** `.env` da `BASE_URL=https://avtoxabar.vipads.uz`.
-Click kabinetidagi manzillar:
+Click kabinetida Prepare va Complete maydonlarining ikkalasiga ham:
 
 ```
-https://avtoxabar.vipads.uz/api/click/prepare
-https://avtoxabar.vipads.uz/api/click/complete
+https://dns.vipads.uz/api/payments/click/webhook
 ```
 
 **Haqiqiy mijoz IP si.** Cloudflare orqasida hamma so‘rov Cloudflare
@@ -420,9 +445,8 @@ Shundan keyin baza deploylardan keyin ham saqlanadi.
 > bundan tashqari baza saqlanmagani uchun to‘lov tarixi yo‘qoladi.
 > Avval Starter tarif + doimiy disk, keyin Click.
 >
-> Click servisidagi manzillar:
-> `https://avtoxabar.vipads.uz/api/click/prepare`
-> `https://avtoxabar.vipads.uz/api/click/complete`
+> Click servisidagi manzil (ikkala maydonga ham):
+> `https://dns.vipads.uz/api/payments/click/webhook`
 
 ---
 

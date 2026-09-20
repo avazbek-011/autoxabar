@@ -1,0 +1,91 @@
+# ============================================================
+#  SERVERNING O'Z nginx'i uchun — sayt: avtoxabar.vipads.uz
+#
+#  Bu fayl konteynerga EMAS, serverning o'ziga qo'yiladi:
+#      /etc/nginx/sites-available/avtoxabar.vipads.uz
+#      ln -s ../sites-available/avtoxabar.vipads.uz /etc/nginx/sites-enabled/
+#      nginx -t && systemctl reload nginx
+#
+#  Zanjir:
+#      Mijoz --HTTPS--> Cloudflare --HTTPS--> shu nginx --HTTP--> konteyner
+#
+#  ── Tayyorgarlik ────────────────────────────────────────────
+#
+#  1) Cloudflare > DNS > Add record
+#       A · avtoxabar · 185.80.234.161 · Proxied (to'q sariq bulut)
+#
+#  2) Cloudflare > SSL/TLS > Origin Server > Create Certificate
+#       Hostname: avtoxabar.vipads.uz
+#       Ikki matnni serverga saqlang:
+#         /etc/ssl/cloudflare/avtoxabar.pem
+#         /etc/ssl/cloudflare/avtoxabar.key      (chmod 600)
+#
+#  3) Cloudflare > SSL/TLS > Overview > **Full (strict)**
+#       «Flexible» QO'YMANG — cheksiz redirect halqasi hosil bo'ladi.
+#
+#  4) Cloudflare'dan haqiqiy mijoz IP sini olish uchun repodagi
+#     nginx/snippets/cloudflare-real-ip.conf faylini serverga
+#     ko'chiring: /etc/nginx/snippets/cloudflare-real-ip.conf
+#
+#  5) Docker to'plamini ishga tushiring (konteyner 127.0.0.1:8080 da):
+#       docker compose up -d --build
+# ============================================================
+
+server {
+    listen      80;
+    listen      [::]:80;
+    server_name avtoxabar.vipads.uz;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name avtoxabar.vipads.uz;
+
+    server_tokens off;
+
+    # Cloudflare Origin Certificate (15 yil, yangilash kerak emas)
+    ssl_certificate     /etc/ssl/cloudflare/avtoxabar.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/avtoxabar.key;
+
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+
+    # Cloudflare orqasida haqiqiy mijoz IP si (4-qadam)
+    include /etc/nginx/snippets/cloudflare-real-ip.conf;
+
+    # HTTPS ishlayotganiga ishonch hosil qilgandan keyin yoqing:
+    # brauzer buni bir yil eslab qoladi.
+    # add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Ilovada MAX_CONTENT_LENGTH = 16 MB. Bu yerda ham, konteyner
+    # ichidagi nginx'da ham bir xil bo'lishi kerak — aks holda
+    # foydalanuvchi e'longa rasm yuklay olmaydi (413).
+    client_max_body_size 16m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        # cloudflare-real-ip.conf tufayli $remote_addr allaqachon
+        # haqiqiy mijoz IP si. Konteyner ichidagi nginx shu qatordagi
+        # oxirgi qiymatni oladi.
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+
+        proxy_connect_timeout 5s;
+        proxy_send_timeout    120s;
+        proxy_read_timeout    120s;
+    }
+}

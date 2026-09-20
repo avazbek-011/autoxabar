@@ -367,12 +367,15 @@ Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
 
 1. Click merchant kabinetiga kiring (<https://merchant.click.uz>)
 2. **Servis yarating** (SHOP API sxemasi bo'yicha)
-3. Servis sozlamalarida ikkita manzilni ko'rsating:
+3. Servis sozlamalarida **Prepare URL** va **Complete URL**
+   maydonlarining **ikkalasiga ham bitta manzil** yozing:
 
 ```
-Prepare URL   https://avtoxabar.vipads.uz/api/click/prepare
-Complete URL  https://avtoxabar.vipads.uz/api/click/complete
+https://dns.vipads.uz/api/payments/click/webhook
 ```
+
+   Click qaysi bosqich ekanini so'rovning o'zida (`action` maydoni)
+   aytadi, shuning uchun alohida ikkita manzil shart emas.
 
 > Bu ikkita manzilni admin panelning **Tizim holati** bo'limidan ham
 > nusxalab olsangiz bo'ladi — u yerda joriy domen bilan ko'rsatiladi.
@@ -453,8 +456,7 @@ o'rnatish shart emas. Loyiha papkasida bitta buyruq:
 docker compose up -d --build
 ```
 
-Manzil: **http://127.0.0.1** (80-port band bo'lsa `.env` ga
-`NGINX_HTTP_PORT=8080` yozing va `http://127.0.0.1:8080` ga kiring)
+Manzil: **http://127.0.0.1:8080**
 
 | Buyruq | Nima qiladi |
 |---|---|

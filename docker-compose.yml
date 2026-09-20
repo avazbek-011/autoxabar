@@ -5,8 +5,18 @@
 #    docker compose logs -f           loglarni ko'rish
 #    docker compose down              to'xtatish (ma'lumotlar saqlanadi)
 #
-#  Sayt nginx orqali ochiladi: http://127.0.0.1
-#  (80-port band bo'lsa .env ga NGINX_HTTP_PORT=8080 yozing)
+#  ── Arxitektura ─────────────────────────────────────────────
+#
+#    Mijoz --HTTPS--> Cloudflare --> host nginx --> bu to'plam
+#                                    (avtoxabar.vipads.uz)
+#    Click --HTTPS-----------------> host nginx --> bu to'plam
+#                                    (dns.vipads.uz/api/payments/click/webhook)
+#
+#  To'plam faqat 127.0.0.1:8080 da tinglaydi — tashqariga serverning
+#  o'z nginx'i chiqaradi. TLS va Cloudflare sozlamalari ham o'sha
+#  yerda: tayyor namunalar nginx/host/ papkasida.
+#
+#  Mahalliy sinov uchun: http://127.0.0.1:8080
 #
 #  Sozlamalar .env faylidan o'qiladi. Fayl bo'lmasa ham ishga tushadi,
 #  lekin SECRET_KEY va ADMIN_PASSWORD tasodifiy bo'lib qoladi —
@@ -28,14 +38,12 @@ services:
       DATA_DIR: /data
       SESSION_DIR: /data/sessions
       PORT: "5000"
-      # nginx orqasida ishlaydi: X-Forwarded-* sarlavhalariga ishoniladi.
-      # Ilova to'g'ridan-to'g'ri ochilsa 0 bo'lishi kerak — aks holda
-      # har kim o'z IP sini soxtalashtira oladi.
+      # Oldida proksi turibdi: X-Forwarded-* sarlavhalariga ishoniladi.
+      # Konteyner ichidagi nginx real_ip orqali haqiqiy mijoz IP sini
+      # aniqlab, uni sarlavha oxiriga qo'yadi — ProxyFix o'shani oladi.
       TRUSTED_PROXIES: "1"
 
-    # Port tashqariga chiqarilmaydi: faqat nginx orqali kiriladi.
-    # To'g'ridan-to'g'ri tekshirmoqchi bo'lsangiz vaqtincha oching:
-    #   ports: ["5000:5000"]
+    # Port tashqariga chiqarilmaydi: faqat nginx orqali kiriladi
     expose:
       - "5000"
 
@@ -59,20 +67,16 @@ services:
         condition: service_healthy
 
     ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-      - "${NGINX_HTTPS_PORT:-443}:443"
+      # FAQAT serverning o'zidan ko'rinadi. Tashqariga host nginx
+      # chiqaradi — shuning uchun 127.0.0.1 ni olib tashlamang.
+      - "127.0.0.1:${APP_PORT:-8080}:80"
 
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
-      # Cloudflare Origin Certificate (nginx/certs/origin.pem + origin.key)
-      - ./nginx/certs:/etc/nginx/certs:ro
       # Statik fayllarni nginx to'g'ridan-to'g'ri beradi
       - ./static:/srv/static:ro
       - autoxabar-uploads:/srv/static/uploads:ro
-      # Let's Encrypt uchun (certbot profili ishlatilganda to'ladi)
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
 
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/"]
@@ -80,20 +84,6 @@ services:
       timeout: 5s
       retries: 3
 
-  # Sertifikat olish uchun, doimiy ishlamaydi. Ishlatish:
-  #   docker compose --profile certbot run --rm certbot certonly \
-  #     --webroot -w /var/www/certbot -d avtoxabar.vipads.uz \
-  #     --email siz@pochta.uz --agree-tos --no-eff-email
-  certbot:
-    image: certbot/certbot:latest
-    container_name: autoxabar-certbot
-    profiles: ["certbot"]
-    volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
-
 volumes:
   autoxabar-data:
   autoxabar-uploads:
-  certbot-www:
-  certbot-conf:
