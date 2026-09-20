@@ -228,6 +228,24 @@ CREATE TABLE IF NOT EXISTS payme_transactions (
 );
 CREATE INDEX IF NOT EXISTS idx_ptx_payment ON payme_transactions(payment_id);
 
+-- ============ CLICK TRANZAKSIYALARI ============
+CREATE TABLE IF NOT EXISTS click_transactions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    click_trans_id  TEXT    UNIQUE NOT NULL,
+    click_paydoc_id TEXT    DEFAULT '',
+    payment_id      INTEGER NOT NULL,
+    amount          INTEGER NOT NULL,
+    state           INTEGER NOT NULL DEFAULT 0,   -- 0 kutilmoqda, 1 to'langan, -1 bekor
+    error_note      TEXT    DEFAULT '',
+    sign_time       TEXT    DEFAULT '',
+    prepare_time    TEXT,
+    perform_time    TEXT,
+    cancel_time     TEXT,
+    created_at      TEXT    NOT NULL,
+    updated_at      TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ctx_payment ON click_transactions(payment_id);
+
 -- ============ MOLIYA DAFTARI ============
 CREATE TABLE IF NOT EXISTS finance_ledger (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,

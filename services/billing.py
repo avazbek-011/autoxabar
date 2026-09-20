@@ -24,6 +24,18 @@ PERIOD_DAYS = 30
 MAX_CHARGE_FAILS = 3
 
 
+def auto_pay_available():
+    """Kartadan avtomatik yechish imkoni bormi?
+
+    Click SHOP API faqat to'lov havolasini beradi — kartani saqlab, keyin
+    o'zimiz yechish uchun alohida provayder (Payme Subscribe yoki Click
+    Merchant card_token) sozlangan bo'lishi kerak. Sozlanmagan bo'lsa
+    obunalar qo'lda yangilanadi va foydalanuvchiga bekorga "avto-to'lov
+    amalga oshmadi" xabari bormaydi.
+    """
+    return subscribe_api.configured
+
+
 def price(db=None):
     return get_setting_int("price_per_profile", 5000, db=db)
 
@@ -142,7 +154,7 @@ def start_trial(user_id, profile_id, db=None):
             0,
             days,
             "trial",
-            1,
+            1 if auto_pay_available() else 0,
             now_str(),
             dt_str(expires),
             dt_str(expires),
@@ -205,7 +217,7 @@ def extend_subscription(user_id, profile_id, days=PERIOD_DAYS, amount=None, db=N
                 amount,
                 days,
                 "active",
-                1,
+                1 if auto_pay_available() else 0,
                 now_str(),
                 dt_str(new_end),
                 dt_str(new_end),
@@ -423,6 +435,8 @@ def charge_subscription(sub, db=None):
 
 def charge_due_subscriptions(db=None):
     """Muddati kelgan barcha avto-obunalarni to'laydi. Fon jarayoni chaqiradi."""
+    if not auto_pay_available():
+        return 0, 0
     rows = query(
         "SELECT * FROM subscriptions WHERE status IN ('active','trial') "
         "AND auto_renew = 1 AND next_charge_at IS NOT NULL AND next_charge_at <= ? "

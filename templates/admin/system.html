@@ -27,49 +27,55 @@
     <div class="stat-sub">Telethon: {{ 'bor' if telethon else 'yo‘q' }}</div>
   </div>
 
-  <div class="stat {{ 'is-ok' if payme_merchant else 'is-warn' }}">
+  <div class="stat {{ 'is-ok' if click_ready else 'is-warn' }}">
     <div class="stat-top">
-      <span class="stat-label">Payme Merchant</span>
+      <span class="stat-label">Click</span>
       <span class="stat-ico">{{ icon('card', 17) }}</span>
     </div>
     <div class="stat-value" style="font-size:1.2rem">
-      {{ 'Sozlangan' if payme_merchant else 'Sozlanmagan' }}
+      {{ 'Sozlangan' if click_ready else 'Sozlanmagan' }}
     </div>
     <div class="stat-sub">to‘lov qabul qilish</div>
   </div>
 
   <div class="stat {{ 'is-ok' if payme_subscribe else 'is-warn' }}">
     <div class="stat-top">
-      <span class="stat-label">Payme Subscribe</span>
+      <span class="stat-label">Avto-to‘lov</span>
       <span class="stat-ico">{{ icon('refresh', 17) }}</span>
     </div>
     <div class="stat-value" style="font-size:1.2rem">
-      {{ 'Sozlangan' if payme_subscribe else 'Sozlanmagan' }}
+      {{ 'Sozlangan' if payme_subscribe else 'O‘chiq' }}
     </div>
-    <div class="stat-sub">avto-to‘lov</div>
+    <div class="stat-sub">{{ 'Payme Subscribe' if payme_subscribe else 'obuna qo‘lda yangilanadi' }}</div>
   </div>
 </div>
 
 <div class="grid g2">
   <div class="card">
-    <div class="card-head"><div class="card-title">{{ icon('link', 19) }} Payme sozlash</div></div>
+    <div class="card-head"><div class="card-title">{{ icon('link', 19) }} Click sozlash</div></div>
     <p class="small muted mb">
-      Payme kabinetida kassa yaratganda quyidagi manzilni «Endpoint URL» maydoniga kiriting:
+      Click merchant kabinetida servis yaratganda quyidagi ikkita manzilni kiriting:
     </p>
+    <p class="small muted">Prepare URL (action = 0)</p>
     <div class="copy-box mb">
-      <span class="grow">{{ merchant_url }}</span>
-      <button class="btn-icon" data-copy="{{ merchant_url }}">{{ icon('copy', 16) }}</button>
+      <span class="grow">{{ click_prepare_url }}</span>
+      <button class="btn-icon" data-copy="{{ click_prepare_url }}">{{ icon('copy', 16) }}</button>
+    </div>
+    <p class="small muted">Complete URL (action = 1)</p>
+    <div class="copy-box mb">
+      <span class="grow">{{ click_complete_url }}</span>
+      <button class="btn-icon" data-copy="{{ click_complete_url }}">{{ icon('copy', 16) }}</button>
     </div>
     <p class="small muted mb">
-      Kassa sozlamalarida <b>payment_id</b> nomli maydon (account field) yaratilishi shart —
-      tizim buyurtmani shu maydon orqali topadi.
+      Buyurtma raqami sifatida <b>to‘lov ID</b> si ishlatiladi — Click uni
+      <span class="mono">merchant_trans_id</span> maydonida qaytaradi.
     </p>
     <div class="alert alert-info">
       {{ icon('info', 19) }}
       <div class="small">
         Kalitlar <span class="mono">.env</span> faylida saqlanadi:
-        <span class="mono">PAYME_MERCHANT_ID</span>, <span class="mono">PAYME_KEY</span>,
-        <span class="mono">PAYME_SUBSCRIBE_ID</span>, <span class="mono">PAYME_SUBSCRIBE_KEY</span>.
+        <span class="mono">CLICK_MERCHANT_ID</span>, <span class="mono">CLICK_SERVICE_ID</span>,
+        <span class="mono">CLICK_MERCHANT_USER_ID</span>, <span class="mono">CLICK_SECRET_KEY</span>.
       </div>
     </div>
   </div>

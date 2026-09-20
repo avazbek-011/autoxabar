@@ -1,14 +1,14 @@
-"""Payme uchun kirish nuqtalari.
+"""Payme uchun kirish nuqtasi (hozircha ishlatilmaydi — kalitlar bo'sh).
 
-  POST /api/payme     — Payme serveri chaqiradigan Merchant API (JSON-RPC)
-  GET  /tolov/natija  — foydalanuvchi to'lovdan keyin qaytadigan sahifa
+  POST /api/payme  — Payme serveri chaqiradigan Merchant API (JSON-RPC)
+
+To'lovdan qaytish sahifasi provayderga bog'liq emas: blueprints/site.py ->
+`site.payment_result` (/tolov/natija).
 """
 import logging
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, request
 
-from core.auth import current_user
-from core.db import query
 from services import billing
 from services.payme import MerchantAPI
 
@@ -40,16 +40,3 @@ def merchant_endpoint():
     response = merchant.handle(auth, raw)
     return jsonify(response)
 
-
-@bp.route("/tolov/natija")
-def result():
-    """Payme checkout'dan qaytish sahifasi."""
-    payment_id = request.args.get("payment_id", type=int)
-    payment = None
-    if payment_id:
-        payment = query("SELECT * FROM payments WHERE id = ?", (payment_id,), one=True)
-        user = current_user()
-        # Boshqa foydalanuvchining to'lovini ko'rsatmaymiz
-        if payment and user and payment["user_id"] != user["id"] and user["role"] != "admin":
-            payment = None
-    return render_template("site/payment_result.html", payment=payment)

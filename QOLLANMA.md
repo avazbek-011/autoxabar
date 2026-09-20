@@ -13,7 +13,7 @@
 4. [Saytdan foydalanish](#4-saytdan-foydalanish)
 5. [Pul: narx, obuna, to'lovlar](#5-pul-narx-obuna-tolovlar)
 6. [Admin panel va moliya hisoboti](#6-admin-panel-va-moliya-hisoboti)
-7. [Payme'ni ulash](#7-paymeni-ulash)
+7. [Click'ni ulash](#7-clickni-ulash)
 8. [Kompyuterda ishga tushirish](#8-kompyuterda-ishga-tushirish)
 9. [Muammolar va yechimlar](#9-muammolar-va-yechimlar)
 10. [Muhim ma'lumotlar](#10-muhim-malumotlar)
@@ -123,7 +123,7 @@ Render `render.yaml` ni o'qiydi va faqat shu 4 tasini so'raydi:
 | `TELEGRAM_API_ID` | `34206677` |
 | `TELEGRAM_API_HASH` | `e46c550f98e46809a6eae1d003918c91` |
 
-Qolgan hamma narsa (narx, soliq, Payme, manzil) oldindan to'ldirilgan.
+Qolgan hamma narsa (narx, soliq, manzil) oldindan to'ldirilgan.
 
 ### 4-qadam — Apply
 
@@ -297,7 +297,7 @@ Har bir to'lov shunday ajratiladi:
 
 ```
 yalpi tushum                        5 000 so'm
- − Payme komissiyasi (1%)             −50 so'm
+ − Ekvayring komissiyasi (1%)         −50 so'm
  ─────────────────────────────────────────────
  = hisobga tushgan summa            4 950 so'm
  − soliq (10%)                      −495 so'm
@@ -348,51 +348,80 @@ hammasi kodga tegmasdan o'zgartiriladi.
 
 ---
 
-## 7. Payme'ni ulash
+## 7. Click'ni ulash
 
 Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
 
-### Payme kabinetida
+> **Avval o'qing.** Bepul Render tarifida Click'ni ulamang: xizmat 15 daqiqa
+> harakatsizlikdan keyin uxlaydi, Click'ning so'rovlari timeout bo'ladi va
+> to'lov Click tomonda qo'lda tekshiruvga tushadi. Bundan tashqari bepul
+> tarifda baza saqlanmaydi — to'lovlar tarixi har deployda yo'qoladi.
+> Ketma-ketlik: **Starter tarif → doimiy disk → keyin Click**.
 
-1. Payme merchant kabinetiga kiring
-2. **Kassa yarating**
-3. **Endpoint URL** maydoniga yozing:
+### Click kabinetida
+
+1. Click merchant kabinetiga kiring (<https://merchant.click.uz>)
+2. **Servis yarating** (SHOP API sxemasi bo'yicha)
+3. Servis sozlamalarida ikkita manzilni ko'rsating:
 
 ```
-https://autoxabar-7tbz.onrender.com/api/payme
+Prepare URL   https://autoxabar-7tbz.onrender.com/api/click/prepare
+Complete URL  https://autoxabar-7tbz.onrender.com/api/click/complete
 ```
 
-4. **Buyurtma maydoni (account)** yarating — nomi **aynan** shunday bo'lsin:
+> Bu ikkita manzilni admin panelning **Tizim holati** bo'limidan ham
+> nusxalab olsangiz bo'ladi — u yerda joriy domen bilan ko'rsatiladi.
 
-```
-payment_id
-```
+4. Payme'dagidek alohida "buyurtma maydoni" yaratish **shart emas**:
+   Click buyurtma raqamini `merchant_trans_id` maydonida o'zi qaytaradi.
 
-> Bu nom noto'g'ri bo'lsa to'lov ishlamaydi — tizim buyurtmani shu maydon
-> orqali topadi.
-
-5. Avto-to'lov uchun alohida **Subscribe kassa** ham yarating
+5. Ulanish tugagach Click sizga 4 ta qiymat beradi:
+   `merchant_id`, `service_id`, `merchant_user_id`, `secret_key`
 
 ### Render'da kalitlarni kiritish
 
 Render → xizmatingiz → **`Environment`** → quyidagilarni to'ldiring:
 
 ```
-PAYME_MERCHANT_ID       = kassa ID
-PAYME_KEY               = kassa kaliti
-PAYME_SUBSCRIBE_ID      = Subscribe kassa ID
-PAYME_SUBSCRIBE_KEY     = Subscribe kassa kaliti
+CLICK_MERCHANT_ID       = merchant_id
+CLICK_SERVICE_ID        = service_id
+CLICK_MERCHANT_USER_ID  = merchant_user_id
+CLICK_SECRET_KEY        = secret_key
 ```
 
 **`Save Changes`** → xizmat o'zi qayta ishga tushadi.
 
-### Avto-to'lov qanday ishlaydi
+> `CLICK_SECRET_KEY` — eng maxfiy qiymat. U bilan har qanday odam soxta
+> "to'landi" so'rovi yubora oladi. Uni hech kimga bermang va repozitoriyga
+> yozmang.
 
-1. Foydalanuvchi kabinetda kartasini bir marta bog'laydi
-2. Karta raqami **serverda saqlanmaydi** — faqat Payme bergan xavfsiz token
-3. Obuna muddati tugaganda summa avtomatik yechiladi
-4. To'lov o'tmasa 6 soatdan keyin qayta urinadi (3 martagacha)
-5. Uchala urinish ham o'tmasa — foydalanuvchiga xabar beriladi
+### To'lov qanday kechadi
+
+1. Foydalanuvchi kabinetda **«Click orqali 5 000 so'm»** tugmasini bosadi
+2. Tizim `pending` holatidagi to'lov yozuvini yaratadi va Click sahifasiga
+   yo'naltiradi
+3. Foydalanuvchi UzCard yoki Humo kartasi bilan to'laydi
+4. Click bizga **Prepare** (tekshirish), so'ng **Complete** (yakunlash)
+   so'rovini yuboradi
+5. Complete muvaffaqiyatli bo'lgach: to'lov `paid` bo'ladi, obuna 30 kunga
+   uzayadi, profil PRO rejimga o'tadi va moliya daftariga yoziladi
+6. Foydalanuvchi **«To'lov qabul qilindi»** sahifasiga qaytadi
+
+### Obuna yangilanishi
+
+Click SHOP API kartani saqlashga ruxsat bermaydi, shuning uchun obuna
+**qo'lda** yangilanadi:
+
+1. Muddat tugashiga 3 kun qolganda foydalanuvchiga eslatma boradi
+2. U kabinetdan Click orqali to'laydi
+3. To'lanmasa muddat tugagach profil to'xtaydi (ma'lumotlar saqlanadi)
+
+### Sinov
+
+Kalitlarni kiritgach, admin panel → **Tizim holati** bo'limida
+**Click: Sozlangan** yozuvi paydo bo'lishi kerak. Keyin kichik summa bilan
+haqiqiy to'lov qilib ko'ring va **To'lovlar** bo'limida `paid` holatga
+o'tganini tekshiring.
 
 ---
 
@@ -520,7 +549,7 @@ Bu fayllar `.gitignore` da, ya'ni GitHub'ga hech qachon tushmaydi:
 
 | Fayl | Nima bor |
 |---|---|
-| `.env` | Telegram kalitlari, parollar, Payme kalitlari |
+| `.env` | Telegram kalitlari, parollar, Click kalitlari |
 | `data/autoxabar.db` | Foydalanuvchilar, to'lovlar, parol hashlari |
 | `sessions/` | Telegram sessiyalari |
 
@@ -563,5 +592,5 @@ Har birini **Admin → Tizim holati** dan qo'lda ham ishga tushirish mumkin.
 2. ☐ QR orqali Telegram akkauntingizni ulang
 3. ☐ Xabar yozing, 1–2 guruhda sinab ko'ring
 4. ☐ Ishonch hosil qilgach barcha guruhlarni yoqing
-5. ☐ Payme kalitlarini oling va ulang (7-bo'lim)
+5. ☐ Click kalitlarini oling va ulang (7-bo'lim)
 6. ☐ Mijozlar kelganda Starter tarifga o'ting

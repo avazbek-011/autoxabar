@@ -6,7 +6,7 @@ Telegram akkauntingizni ulaysiz — tizim sizning e'loningizni siz a'zo bo‘lga
 barcha guruhlarga belgilangan interval bilan avtomatik yuboradi.
 
 - **Narx:** 1 profil = 1 oy = **5 000 so‘m** (sozlamalardan o‘zgartiriladi)
-- **To‘lov:** Payme (bir martalik + saqlangan kartadan **avtomatik oylik yechim**)
+- **To‘lov:** Click (SHOP API — UzCard / Humo, har 30 kunga alohida to‘lov)
 - **Moliya:** har bir tushum yalpi → komissiya → **soliq 10%** → **sof foyda** ga ajratiladi,
   oylik hisobot va bankdan yechib olish hisobi yuritiladi
 
@@ -56,29 +56,47 @@ TELEGRAM_ENGINE=auto
 Kalitlar bo‘lmasa tizim **DEMO rejimda** ishlaydi: saytning barcha bo‘limlarini
 sinab ko‘rish mumkin, lekin haqiqiy xabar yuborilmaydi (tasdiqlash kodi: `12345`).
 
-### Payme — to‘lovni qabul qilish (Merchant API)
+### Click — to‘lovni qabul qilish (SHOP API)
 
 ```
-PAYME_MERCHANT_ID=<kassa ID>
-PAYME_KEY=<kassa kaliti>
+CLICK_MERCHANT_ID=<merchant ID>
+CLICK_SERVICE_ID=<servis ID>
+CLICK_MERCHANT_USER_ID=<merchant user ID>
+CLICK_SECRET_KEY=<maxfiy kalit>
 ```
 
-Payme kabinetida kassa yaratganda:
+Bu to‘rttasini Click merchant kabinetidan olasiz. Servis sozlamalarida
+ikkita manzilni ko‘rsatish kerak:
 
-1. **Endpoint URL:** `https://sizning-domeningiz.uz/api/payme`
-2. **Buyurtma maydoni (account):** nomi aynan `payment_id` bo‘lishi shart —
-   tizim buyurtmani shu maydon orqali topadi.
+| Maydon | Manzil |
+|---|---|
+| **Prepare URL** (action = 0) | `https://sizning-domeningiz.uz/api/click/prepare` |
+| **Complete URL** (action = 1) | `https://sizning-domeningiz.uz/api/click/complete` |
 
-### Payme — avtomatik oylik to‘lov (Subscribe API)
+Buyurtma raqami sifatida `payments.id` ishlatiladi — Click uni
+`merchant_trans_id` maydonida qaytaradi, alohida sozlash shart emas.
+
+Ikkala so‘rov ham `sign_string` (MD5) bilan tekshiriladi:
 
 ```
-PAYME_SUBSCRIBE_ID=<Subscribe kassa ID>
-PAYME_SUBSCRIBE_KEY=<Subscribe kassa kaliti>
+Prepare  : md5(click_trans_id + service_id + SECRET_KEY + merchant_trans_id
+                + amount + action + sign_time)
+Complete : md5(click_trans_id + service_id + SECRET_KEY + merchant_trans_id
+                + merchant_prepare_id + amount + action + sign_time)
 ```
 
-Bu yoqilganda foydalanuvchi kabinetda kartasini bir marta bog‘laydi
-(karta raqami serverda saqlanmaydi — faqat Payme bergan token), so‘ng obuna
-muddati tugaganda summa avtomatik yechiladi.
+Hujjat: <https://docs.click.uz/shop-api/requests>
+
+### Obunani yangilash
+
+Click SHOP API faqat to‘lov havolasini beradi — kartani saqlab, keyin
+o‘zimiz yechish imkoni yo‘q. Shuning uchun obuna **qo‘lda** yangilanadi:
+muddat tugashiga 3 kun qolganda foydalanuvchiga eslatma boradi, u kabinetdan
+Click orqali to‘laydi.
+
+Kelajakda avtomatik yechim kerak bo‘lsa, `services/payme.py` dagi Subscribe
+API kodi joyida turibdi (kalitlari bo‘sh) — yoki Click Merchant API ning
+`card_token/*` metodlarini ulash mumkin.
 
 ### Moliya
 
@@ -133,7 +151,8 @@ core/
   auth.py               sessiya, ruxsatlar, dekoratorlar
   utils.py              formatlash, CSRF, rate-limit, audit
 services/
-  payme.py              Merchant API (JSON-RPC) + Subscribe API (avto-to'lov)
+  click.py              Click SHOP API: Prepare / Complete + to'lov havolasi
+  payme.py              Payme Merchant + Subscribe API (ishlatilmaydi, kalitlar bo'sh)
   billing.py            obunalar, to'lovlar, avto-uzaytirish
   finance.py            daftar, soliq, oylik hisobot, yechimlar
   telegram_engine.py    Telethon: ulash, guruhlar, yuborish (+ demo rejim)
@@ -144,7 +163,8 @@ blueprints/
   auth_bp.py            kirish / ro'yxat / parol
   cabinet.py            foydalanuvchi kabineti
   admin.py              admin panel va moliya
-  payme_bp.py           /api/payme kirish nuqtasi
+  click_bp.py           /api/click/prepare va /api/click/complete
+  payme_bp.py           /api/payme kirish nuqtasi (ishlatilmaydi)
 templates/  static/     Jinja2 shablonlari va dizayn tizimi
 data/autoxabar.db       SQLite bazasi
 ```
@@ -186,7 +206,7 @@ Yangi akkauntlar uchun **10–15 daqiqalik interval** tavsiya etiladi.
 1. `.env` da `SECRET_KEY` ni uzun tasodifiy qatorga almashtiring
 2. `ADMIN_PASSWORD` ni o‘zgartiring
 3. `BASE_URL` ni haqiqiy domenga qo‘ying
-4. HTTPS orqasiga qo‘ying (Payme faqat HTTPS endpoint bilan ishlaydi)
+4. HTTPS orqasiga qo‘ying (Click faqat HTTPS endpoint bilan ishlaydi)
 5. `FLASK_DEBUG=0` ekanini tekshiring
 
 Waitress bilan ishga tushirish (Windows uchun qulay):
@@ -222,13 +242,13 @@ Repozitoriyda `render.yaml` bor, shuning uchun sozlash bir necha bosishdan ibora
 | `ADMIN_PASSWORD` | kuchli parol o'ylab toping |
 | `TELEGRAM_API_ID` | my.telegram.org dan olingan raqam |
 | `TELEGRAM_API_HASH` | my.telegram.org dan olingan hash |
-| `PAYME_*` | hozircha bo'sh qoldiring |
+| `CLICK_*` | Click merchant kabinetidan olingan 4 ta qiymat |
 | `BASE_URL` | deploydan keyin haqiqiy havola bilan to'ldiring |
 
 4. **Apply** → 3–5 daqiqada `https://autoxabar.onrender.com` tayyor bo'ladi
 
 Keyin **Environment** bo'limida `BASE_URL` ni haqiqiy havola bilan almashtiring
-(Payme qaytish manzili shu asosda quriladi).
+(Click'dan qaytish manzili shu asosda quriladi).
 
 ### Bepul tarifning cheklovlari
 
@@ -252,8 +272,14 @@ DATA_DIR=/var/data
 
 Shundan keyin baza deploylardan keyin ham saqlanadi.
 
-> Payme integratsiyasi uchun HTTPS manzil shart — Render buni avtomatik beradi.
-> Payme kassasidagi Endpoint URL: `https://sizning-manzilingiz.onrender.com/api/payme`
+> **Click’ni bepul tarifda ulamang.** Xizmat uxlab qolganda Prepare/Complete
+> so‘rovlari timeout bo‘ladi va to‘lov Click tomonda qo‘lda tekshiruvga tushadi;
+> bundan tashqari baza saqlanmagani uchun to‘lov tarixi yo‘qoladi.
+> Avval Starter tarif + doimiy disk, keyin Click.
+>
+> Click servisidagi manzillar:
+> `https://sizning-manzilingiz.onrender.com/api/click/prepare`
+> `https://sizning-manzilingiz.onrender.com/api/click/complete`
 
 ---
 

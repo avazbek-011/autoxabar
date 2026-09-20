@@ -79,6 +79,15 @@ class Config:
     PAYME_SUBSCRIBE_ID = _str("PAYME_SUBSCRIBE_ID")
     PAYME_SUBSCRIBE_KEY = _str("PAYME_SUBSCRIBE_KEY")
 
+    # --- Click SHOP API (to'lovni qabul qilish) ---
+    CLICK_MERCHANT_ID = _str("CLICK_MERCHANT_ID")
+    CLICK_SERVICE_ID = _str("CLICK_SERVICE_ID")
+    CLICK_MERCHANT_USER_ID = _str("CLICK_MERCHANT_USER_ID")
+    CLICK_SECRET_KEY = _str("CLICK_SECRET_KEY")
+    CLICK_CHECKOUT_URL = _str(
+        "CLICK_CHECKOUT_URL", "https://my.click.uz/services/pay"
+    ).rstrip("/")
+
     # --- Telegram ---
     TELEGRAM_API_ID = _int("TELEGRAM_API_ID", 0)
     TELEGRAM_API_HASH = _str("TELEGRAM_API_HASH")

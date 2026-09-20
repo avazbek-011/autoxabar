@@ -1,6 +1,7 @@
 """Ochiq sahifalar: bosh sahifa, narxlar, qo'llanma, hujjatlar."""
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, request
 
+from core.auth import current_user
 from core.db import query, scalar
 from services import billing
 
@@ -55,6 +56,22 @@ def offer():
 @bp.route("/maxfiylik")
 def privacy():
     return render_template("site/privacy.html")
+
+
+@bp.route("/tolov/natija")
+def payment_result():
+    """To'lov tizimidan qaytish sahifasi (Click `return_url`)."""
+    payment_id = request.args.get("payment_id", type=int)
+    payment = None
+    if payment_id:
+        payment = query("SELECT * FROM payments WHERE id = ?", (payment_id,), one=True)
+        user = current_user()
+        # Boshqa foydalanuvchining to'lovini ko'rsatmaymiz
+        if payment and user and payment["user_id"] != user["id"] and user["role"] != "admin":
+            payment = None
+        elif payment and not user:
+            payment = None
+    return render_template("site/payment_result.html", payment=payment)
 
 
 @bp.route("/api/stats")

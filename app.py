@@ -35,7 +35,7 @@ log = logging.getLogger("app")
 ASSET_VERSION = "1.0.0"
 
 # CSRF tekshiruvidan ozod yo'llar (tashqi xizmatlar chaqiradi)
-CSRF_EXEMPT = {"payme.merchant_endpoint"}
+CSRF_EXEMPT = {"payme.merchant_endpoint", "click.prepare", "click.complete"}
 
 
 def create_app():
@@ -204,6 +204,7 @@ def _register_blueprints(app):
     from blueprints.admin import bp as admin_bp
     from blueprints.auth_bp import bp as auth_bp
     from blueprints.cabinet import bp as cabinet_bp
+    from blueprints.click_bp import bp as click_bp
     from blueprints.payme_bp import bp as payme_bp
     from blueprints.site import bp as site_bp
 
@@ -212,6 +213,7 @@ def _register_blueprints(app):
     app.register_blueprint(cabinet_bp, url_prefix="/kabinet")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(payme_bp)
+    app.register_blueprint(click_bp)
 
 
 # ------------------------------------------------------------------ xatoliklar
@@ -246,6 +248,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    from services import click as click_svc
     from services.telegram_engine import engine_mode
 
     # Windows konsoli UTF-8 ni qo'llab-quvvatlamasligi mumkin
@@ -264,8 +267,8 @@ if __name__ == "__main__":
     print("   Narx       : {} so'm / profil / oy".format(config.PRICE_PER_PROFILE))
     print("   Soliq      : {}%".format(config.TAX_PERCENT))
     print("   Telegram   : {} rejim".format(engine_mode().upper()))
-    print("   Payme      : {}".format(
-        "sozlangan" if config.PAYME_MERCHANT_ID else "sozlanmagan (.env)"))
+    print("   Click      : {}".format(
+        "sozlangan" if click_svc.configured() else "sozlanmagan (.env)"))
     print(line)
     print("")
 

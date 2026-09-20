@@ -19,6 +19,18 @@ services:
     startCommand: gunicorn --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT app:app
     healthCheckPath: /
 
+    # !!! TO'LOV QABUL QILISHDAN OLDIN OQILISHI SHART !!!
+    # `plan: free` da doimiy disk yo'q: SQLite bazasi har deployda va
+    # har uyqudan uyg'onishda nolga tushadi - to'lovlar, obunalar va
+    # foydalanuvchilar yo'qoladi. Haqiqiy pul qabul qilishdan oldin
+    # pullik tarifga o'ting va quyidagini yoqing (DATA_DIR bilan birga):
+    #
+    # disk:
+    #   name: autoxabar-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # ... va envVars ga: - key: DATA_DIR / value: /var/data
+
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.6"
@@ -59,8 +71,20 @@ services:
       - key: TRIAL_DAYS
         value: "3"
 
-      # --- Payme (keyinroq to'ldiriladi) ---
-      # Payme keyinroq qo'shiladi — hozir bo'sh
+      # --- Click (Render so'raydi, repozitoriyga yozilmaydi) ---
+      # Click merchant kabinetidagi servis sozlamalariga qo'yiladigan manzillar:
+      #   Prepare URL  : https://<domen>/api/click/prepare
+      #   Complete URL : https://<domen>/api/click/complete
+      - key: CLICK_MERCHANT_ID
+        sync: false
+      - key: CLICK_SERVICE_ID
+        sync: false
+      - key: CLICK_MERCHANT_USER_ID
+        sync: false
+      - key: CLICK_SECRET_KEY
+        sync: false
+
+      # --- Payme: hozircha ishlatilmaydi (kod joyida, kalitlar bo'sh) ---
       - key: PAYME_MERCHANT_ID
         value: ""
       - key: PAYME_KEY
@@ -70,9 +94,8 @@ services:
       - key: PAYME_SUBSCRIBE_KEY
         value: ""
 
-      # --- Manzil: Render o'zi to'ldiradi ---
+      # --- Manzil ---
+      # DIQQAT: `property: hostport` sxemasiz "host:port" qaytaradi va
+      # havolalar buziladi. Domen o'zgarsa shu qiymatni yangilang.
       - key: BASE_URL
-        fromService:
-          type: web
-          name: autoxabar
-          property: hostport
+        value: "https://autoxabar-7tbz.onrender.com"

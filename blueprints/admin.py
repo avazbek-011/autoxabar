@@ -19,6 +19,7 @@ from core.db import (
 )
 from core.utils import audit, notify, safe_int
 from services import billing, scheduler, worker
+from services import click as click_svc
 from services import finance as fin
 from services import telegram_engine as tg
 
@@ -525,6 +526,9 @@ def system():
         engine=tg.engine_mode(),
         telethon=tg.TELETHON_AVAILABLE,
         db_size=db_size,
+        click_ready=click_svc.configured(),
+        click_prepare_url=config.BASE_URL + "/api/click/prepare",
+        click_complete_url=config.BASE_URL + "/api/click/complete",
         payme_merchant=bool(config.PAYME_MERCHANT_ID and config.PAYME_KEY),
         payme_subscribe=bool(config.PAYME_SUBSCRIBE_ID and config.PAYME_SUBSCRIBE_KEY),
         merchant_url=config.BASE_URL + "/api/payme",

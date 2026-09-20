@@ -44,7 +44,8 @@ from core.utils import (
 from services import billing as billing_svc
 from services import worker
 from services import telegram_engine as tg
-from services.payme import checkout_url, subscribe_api
+from services import click as click_svc
+from services.payme import subscribe_api
 
 log = logging.getLogger("cabinet")
 
@@ -867,9 +868,7 @@ def billing():
         (uid,),
     )
 
-    monthly = billing_svc.price() * max(
-        sum(1 for p in profiles if p["auto_renew"] and p["plan"] == "pro"), 0
-    )
+    monthly = billing_svc.price() * sum(1 for p in profiles if p["plan"] == "pro")
 
     return render_template(
         "cabinet/billing.html",
@@ -879,7 +878,7 @@ def billing():
         price=billing_svc.price(),
         monthly=monthly,
         card_pending=session.get("card_pending"),
-        payme_ready=bool(config.PAYME_MERCHANT_ID),
+        click_ready=click_svc.configured(),
         subscribe_ready=subscribe_api.configured,
     )
 
@@ -887,7 +886,7 @@ def billing():
 @bp.route("/tolov/yaratish", methods=["POST"])
 @login_required
 def payment_create():
-    """Payme checkout orqali bir martalik to'lov."""
+    """Click to'lov sahifasi orqali bir martalik to'lov."""
     user = current_user()
     profile_id = safe_int(request.form.get("profile_id"), 0)
     profile = own_profile_or_404(profile_id) if profile_id else None
@@ -895,20 +894,25 @@ def payment_create():
         flash("Profil tanlanmadi", "error")
         return redirect(url_for("cabinet.billing"))
 
+    # Kalitlar yo'q bo'lsa bo'sh "pending" to'lov yaratmaymiz
+    if not click_svc.configured():
+        flash("To‘lov tizimi hali sozlanmagan. Administratorga murojaat qiling", "error")
+        return redirect(url_for("cabinet.billing"))
+
     amount = billing_svc.price()
     payment_id = billing_svc.create_payment(
         user["id"],
         amount,
         profile_id=profile_id,
+        method="click",
         description="AutoXabar PRO — {}".format(profile["title"] or profile["phone"]),
     )
 
-    if not config.PAYME_MERCHANT_ID:
-        flash("To‘lov tizimi hali sozlanmagan. Administratorga murojaat qiling", "error")
+    back = url_for("site.payment_result", payment_id=payment_id, _external=True)
+    url = click_svc.checkout_url(payment_id, amount, return_url=back)
+    if not url:
+        flash("To‘lov havolasini yaratib bo‘lmadi", "error")
         return redirect(url_for("cabinet.billing"))
-
-    back = url_for("payme.result", payment_id=payment_id, _external=True)
-    url = checkout_url(payment_id, amount, callback_url=back)
     return redirect(url)
 
 

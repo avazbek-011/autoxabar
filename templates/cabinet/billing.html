@@ -11,30 +11,38 @@
   <div class="stat">
     <div class="stat-top"><span class="stat-label">Oylik to‘lov</span><span class="stat-ico">{{ icon('coins', 17) }}</span></div>
     <div class="stat-value">{{ monthly | money('') }}</div>
-    <div class="stat-sub">so‘m / oy (avto-to‘lov yoqilganlar)</div>
+    <div class="stat-sub">so‘m / oy (PRO profillar)</div>
   </div>
   <div class="stat is-info">
     <div class="stat-top"><span class="stat-label">Balans</span><span class="stat-ico">{{ icon('wallet', 17) }}</span></div>
     <div class="stat-value">{{ user.balance | money('') }}</div>
     <div class="stat-sub">so‘m</div>
   </div>
+  {% if subscribe_ready %}
   <div class="stat {{ 'is-ok' if cards else 'is-warn' }}">
     <div class="stat-top"><span class="stat-label">Bog‘langan karta</span><span class="stat-ico">{{ icon('card', 17) }}</span></div>
     <div class="stat-value">{{ cards | length }}</div>
     <div class="stat-sub">{{ 'avto-to‘lov tayyor' if cards else 'karta qo‘shilmagan' }}</div>
   </div>
+  {% else %}
+  <div class="stat {{ 'is-ok' if click_ready else 'is-warn' }}">
+    <div class="stat-top"><span class="stat-label">To‘lov usuli</span><span class="stat-ico">{{ icon('card', 17) }}</span></div>
+    <div class="stat-value" style="font-size:1.2rem">Click</div>
+    <div class="stat-sub">{{ 'UzCard / Humo onlayn' if click_ready else 'sozlanmagan' }}</div>
+  </div>
+  {% endif %}
 </div>
 
-{% if not payme_ready %}
+{% if not click_ready %}
 <div class="alert alert-warn">
   {{ icon('alert', 19) }}
-  <div><b>To‘lov tizimi sozlanmagan.</b> Administrator Payme kalitlarini kiritishi kerak.</div>
+  <div><b>To‘lov tizimi sozlanmagan.</b> Administrator Click kalitlarini kiritishi kerak.</div>
 </div>
 {% endif %}
 
 <div class="tabs">
   <button class="tab active" data-tab="obunalar">Obunalar</button>
-  <button class="tab" data-tab="kartalar">Kartalar</button>
+  {% if subscribe_ready %}<button class="tab" data-tab="kartalar">Kartalar</button>{% endif %}
   <button class="tab" data-tab="tarix">To‘lovlar tarixi</button>
 </div>
 
@@ -63,6 +71,7 @@
 
       <div class="divider"></div>
 
+      {% if subscribe_ready %}
       <form method="post" action="{{ url_for('cabinet.auto_renew_toggle') }}" data-no-loading class="mb">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <input type="hidden" name="profile_id" value="{{ p.id }}">
@@ -81,13 +90,22 @@
           </span>
         </label>
       </form>
+      {% else %}
+      <div class="alert alert-info mb">
+        {{ icon('clock', 17) }}
+        <div class="small">
+          Muddat tugaganda obunani Click orqali o‘zingiz yangilaysiz —
+          kartadan avtomatik yechim yo‘q.
+        </div>
+      </div>
+      {% endif %}
 
       <div class="flex gap-sm">
         <form method="post" action="{{ url_for('cabinet.payment_create') }}" class="grow">
           <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <input type="hidden" name="profile_id" value="{{ p.id }}">
-          <button class="btn btn-primary btn-sm btn-block" {{ 'disabled' if not payme_ready }}>
-            {{ icon('card', 15) }} {{ price | num }} so‘m to‘lash
+          <button class="btn btn-primary btn-sm btn-block" {{ 'disabled' if not click_ready }}>
+            {{ icon('card', 15) }} Click orqali {{ price | num }} so‘m
           </button>
         </form>
         {% if user.balance >= price %}
@@ -110,6 +128,7 @@
 </div>
 
 <!-- ═════════ KARTALAR ═════════ -->
+{% if subscribe_ready %}
 <div class="tab-panel" data-panel="kartalar" id="kartalar">
   {% if card_pending %}
   <div class="card card-accent">
@@ -211,6 +230,8 @@
   {% endif %}
 </div>
 
+{% endif %}
+
 <!-- ═════════ TARIX ═════════ -->
 <div class="tab-panel" data-panel="tarix">
   <div class="card">
@@ -230,7 +251,8 @@
               {% if p.ptitle %}<div class="xs muted">{{ p.ptitle }}</div>{% endif %}
             </td>
             <td class="xs">
-              {% if p.method == 'payme_auto' %}Avto-to‘lov
+              {% if p.method == 'click' %}Click
+              {% elif p.method == 'payme_auto' %}Avto-to‘lov
               {% elif p.method == 'payme' %}Payme
               {% elif p.method == 'balance' %}Balans
               {% else %}Qo‘lda{% endif %}
