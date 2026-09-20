@@ -5,6 +5,9 @@
 #    docker compose logs -f           loglarni ko'rish
 #    docker compose down              to'xtatish (ma'lumotlar saqlanadi)
 #
+#  Sayt nginx orqali ochiladi: http://127.0.0.1
+#  (80-port band bo'lsa .env ga NGINX_HTTP_PORT=8080 yozing)
+#
 #  Sozlamalar .env faylidan o'qiladi. Fayl bo'lmasa ham ishga tushadi,
 #  lekin SECRET_KEY va ADMIN_PASSWORD tasodifiy bo'lib qoladi —
 #  avval `copy .env.example .env` qilib to'ldirgan ma'qul.
@@ -25,9 +28,16 @@ services:
       DATA_DIR: /data
       SESSION_DIR: /data/sessions
       PORT: "5000"
+      # nginx orqasida ishlaydi: X-Forwarded-* sarlavhalariga ishoniladi.
+      # Ilova to'g'ridan-to'g'ri ochilsa 0 bo'lishi kerak — aks holda
+      # har kim o'z IP sini soxtalashtira oladi.
+      TRUSTED_PROXIES: "1"
 
-    ports:
-      - "5000:5000"
+    # Port tashqariga chiqarilmaydi: faqat nginx orqali kiriladi.
+    # To'g'ridan-to'g'ri tekshirmoqchi bo'lsangiz vaqtincha oching:
+    #   ports: ["5000:5000"]
+    expose:
+      - "5000"
 
     volumes:
       # Baza va Telegram sessiyalari — yo'qolsa hamma narsa yo'qoladi
@@ -39,6 +49,49 @@ services:
     # Fon vazifalari (xabar yuborish sikli) har bir nusxada qaytadan ishlaydi
     # va bitta profil bir necha marta xabar yuborib, akkaunt bloklanishi mumkin.
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: autoxabar-nginx
+    restart: unless-stopped
+
+    depends_on:
+      autoxabar:
+        condition: service_healthy
+
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      # Statik fayllarni nginx to'g'ridan-to'g'ri beradi
+      - ./static:/srv/static:ro
+      - autoxabar-uploads:/srv/static/uploads:ro
+      # Let's Encrypt uchun (certbot profili ishlatilganda to'ladi)
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Sertifikat olish uchun, doimiy ishlamaydi. Ishlatish:
+  #   docker compose --profile certbot run --rm certbot certonly \
+  #     --webroot -w /var/www/certbot -d sizning-domen.uz \
+  #     --email siz@pochta.uz --agree-tos --no-eff-email
+  certbot:
+    image: certbot/certbot:latest
+    container_name: autoxabar-certbot
+    profiles: ["certbot"]
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+
 volumes:
   autoxabar-data:
   autoxabar-uploads:
+  certbot-www:
+  certbot-conf:

@@ -43,6 +43,12 @@ ENV/
 tools/
 run.bat
 
+# --- nginx (konteyner ichida kerak emas, compose orqali ulanadi) ---
+nginx/
+docker-compose.yml
+Dockerfile
+.dockerignore
+
 # --- Statik GitHub Pages nusxasi (ishga tushirishda kerak emas) ---
 docs/
 

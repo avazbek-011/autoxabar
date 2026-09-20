@@ -48,6 +48,8 @@ def create_app():
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True
 
+    _apply_proxy_fix(app)
+
     os.makedirs(config.UPLOAD_DIR, exist_ok=True)
     os.makedirs(config.SESSION_DIR, exist_ok=True)
     init_db()
@@ -60,6 +62,27 @@ def create_app():
     _start_scheduler(app)
 
     return app
+
+
+def _apply_proxy_fix(app):
+    """nginx / Render kabi proksi orqasida haqiqiy IP va sxemani ko'rish.
+
+    Ularsiz `request.remote_addr` proksining IP si bo'ladi (audit jurnali
+    foydasiz), `url_for(..., _external=True)` esa https o'rniga http
+    yasaydi — Click'dan qaytish manzili buziladi.
+
+    TRUSTED_PROXIES = 0 bo'lsa hech narsa qilinmaydi: ilova to'g'ridan-to'g'ri
+    ochilganda X-Forwarded-For ga ishonish IP ni soxtalashtirishga yo'l ochadi.
+    """
+    hops = config.TRUSTED_PROXIES
+    if hops <= 0:
+        return
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops, x_prefix=hops
+    )
+    log.info("ProxyFix yoqildi (%s ta ishonchli proksi)", hops)
 
 
 def _start_scheduler(app):

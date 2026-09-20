@@ -24,7 +24,11 @@ copy .env.example .env
 docker compose up -d --build
 ```
 
-Manzil: **http://127.0.0.1:5000** · loglar: `docker compose logs -f`
+Manzil: **http://127.0.0.1** · loglar: `docker compose logs -f`
+
+Ikkita konteyner ko‘tariladi: **nginx** (80/443-port, statik fayllar va
+reverse-proxy) va **autoxabar** (gunicorn, faqat ichki tarmoqda).
+80-port band bo‘lsa `.env` ga `NGINX_HTTP_PORT=8080` yozing.
 
 Ma‘lumotlar ikkita volume‘da saqlanadi va `docker compose down` dan keyin
 ham joyida qoladi:
@@ -196,8 +200,12 @@ blueprints/
 templates/  static/     Jinja2 shablonlari va dizayn tizimi
 data/autoxabar.db       SQLite bazasi
 Dockerfile              konteyner: python:3.12-slim, gunicorn, root'siz
-docker-compose.yml      volume'lar bilan tayyor ishga tushirish
+docker-compose.yml      nginx + ilova, volume'lar bilan
 .dockerignore           konteynerga tushmaydigan fayllar
+nginx/
+  conf.d/autoxabar.conf             HTTP (80) — faol
+  conf.d/autoxabar-ssl.conf.example HTTPS (443) — nomini o'zgartirib yoqiladi
+  snippets/app.conf                 proxy va statik fayl qoidalari (umumiy)
 ```
 
 ---
@@ -257,15 +265,47 @@ shuning uchun waitress/gunicorn ostida ham avtomatik ishlaydi.
 > rejalashtiruvchi yonishi kerak — qolganlariga `.env` orqali
 > `RUN_SCHEDULER=0` bering, aks holda xabarlar takroran yuboriladi.
 
-### Docker bilan serverga qo‘yish
+### Docker + nginx bilan serverga qo‘yish
 
 ```bash
 docker compose up -d --build
 ```
 
-Konteyner `--workers 1 --threads 8` bilan ishlaydi va root huquqisiz
-(`uid 10001`) yuradi. HTTPS uchun oldiga Caddy yoki nginx qo‘ying —
-Click faqat HTTPS endpoint bilan ishlaydi.
+Ilova `--workers 1 --threads 8` bilan, root huquqisiz (`uid 10001`) ishlaydi
+va tashqariga port chiqarmaydi — hamma so‘rov nginx orqali o‘tadi.
+nginx `/static/` ni o‘zi beradi, qolganini gunicorn‘ga uzatadi.
+
+**Proksi orqasida ishlash.** `TRUSTED_PROXIES=1` compose‘da o‘rnatilgan —
+shunda ProxyFix `X-Forwarded-*` ni o‘qiydi va ilova haqiqiy mijoz IP sini
+hamda `https` sxemasini ko‘radi. Busiz audit jurnaliga nginx‘ning ichki IP
+si yoziladi va Click‘dan qaytish manzili `http://` bo‘lib qoladi.
+Ilovani to‘g‘ridan-to‘g‘ri ochsangiz `TRUSTED_PROXIES=0` qiling, aks
+holda har kim o‘z IP sini soxtalashtira oladi.
+
+#### HTTPS yoqish (Click uchun shart)
+
+Domen serverga yo‘naltirilgan bo‘lishi kerak. Uch qadam:
+
+```bash
+docker compose --profile certbot run --rm certbot certonly --webroot -w /var/www/certbot -d sizning-domen.uz --email siz@pochta.uz --agree-tos --no-eff-email
+```
+
+So‘ng `nginx/conf.d/autoxabar-ssl.conf.example` ichidagi yo‘riqnomaga
+amal qiling: domen nomini almashtirib, faylni `autoxabar-ssl.conf` deb
+nomlang va `autoxabar.conf` dagi `include` ni HTTPS redirect bilan
+almashtiring. Keyin:
+
+```bash
+docker compose restart nginx
+```
+
+Oxirida `.env` da `BASE_URL` ni `https://sizning-domen.uz` qilib qo‘ying.
+
+Sertifikat 90 kunda tugaydi — yangilashni cron ga qo‘ying:
+
+```bash
+docker compose --profile certbot run --rm certbot renew && docker compose exec nginx nginx -s reload
+```
 
 **Konteynerni ko‘paytirmang.** `--scale` yoki `replicas` ishlatilsa, fon
 vazifalari har bir nusxada qaytadan ishlaydi va bitta profil bir necha marta

@@ -34,6 +34,10 @@ class Config:
     HOST = _str("HOST", "0.0.0.0")
     PORT = _int("PORT", 5000)
     BASE_URL = _str("BASE_URL", "http://127.0.0.1:5000").rstrip("/")
+    # Ilova oldida nechta ishonchli reverse-proxy turibdi (nginx, Render...).
+    # 0 = to'g'ridan-to'g'ri ochilgan: X-Forwarded-* sarlavhalariga
+    # ishonilmaydi, chunki ularni har kim soxtalashtira oladi.
+    TRUSTED_PROXIES = _int("TRUSTED_PROXIES", 0)
     TIMEZONE = _str("TIMEZONE", "Asia/Tashkent")
     # Fon vazifalari (yuborish sikli, avto-to'lov) shu jarayonda ishlasinmi
     RUN_SCHEDULER = _str("RUN_SCHEDULER", "1") not in ("0", "false", "False")

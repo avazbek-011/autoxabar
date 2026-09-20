@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from flask import request, session
 
+from config import config
 from core.db import TZ, now, now_str, query, execute
 
 PHONE_RE = re.compile(r"^\+998\d{9}$")
@@ -171,6 +172,17 @@ def csrf_valid(token=None):
 
 
 def client_ip():
+    """Mijozning haqiqiy IP manzili.
+
+    Proksi orqasida (TRUSTED_PROXIES > 0) ProxyFix `remote_addr` ni
+    X-Forwarded-For dan to'g'ri o'rnatib beradi va uni soxtalashtirib
+    bo'lmaydi — chunki nginx haqiqiy IP ni sarlavha oxiriga qo'shadi.
+
+    Proksi bo'lmasa sarlavhaga ishonmaymiz: uni istalgan odam yuborishi
+    va audit jurnaliga yolg'on IP yozib ketishi mumkin.
+    """
+    if config.TRUSTED_PROXIES:
+        return request.remote_addr or ""
     fwd = request.headers.get("X-Forwarded-For", "")
     if fwd:
         return fwd.split(",")[0].strip()

@@ -448,7 +448,8 @@ o'rnatish shart emas. Loyiha papkasida bitta buyruq:
 docker compose up -d --build
 ```
 
-Manzil o'sha: **http://127.0.0.1:5000**
+Manzil: **http://127.0.0.1** (80-port band bo'lsa `.env` ga
+`NGINX_HTTP_PORT=8080` yozing va `http://127.0.0.1:8080` ga kiring)
 
 | Buyruq | Nima qiladi |
 |---|---|

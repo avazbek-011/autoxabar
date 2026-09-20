@@ -1,0 +1,51 @@
+# ============================================================
+#  HTTPS (443-port)
+#
+#  nginx faqat `*.conf` fayllarni o'qiydi, shuning uchun bu fayl
+#  hozir ishlamaydi. Yoqish uchun:
+#
+#   1) Sertifikat oling (domen serverga yo'naltirilgan bo'lishi shart):
+#
+#      docker compose --profile certbot run --rm certbot certonly \
+#        --webroot -w /var/www/certbot -d sizning-domen.uz \
+#        --email siz@pochta.uz --agree-tos --no-eff-email
+#
+#   2) Quyidagi 3 joydagi `sizning-domen.uz` ni o'zingiznikiga almashtiring
+#
+#   3) Faylni qayta nomlang:  autoxabar-ssl.conf
+#
+#   4) autoxabar.conf dagi `include` ni izohga oling va uning o'rniga
+#      `return 301 https://$host$request_uri;` ni oching
+#
+#   5) docker compose restart nginx
+#
+#   6) .env da BASE_URL ni https:// bilan yozing
+#
+#  Sertifikatni yangilash (90 kunda bir, cron ga qo'ying):
+#      docker compose --profile certbot run --rm certbot renew
+#      docker compose exec nginx nginx -s reload
+# ============================================================
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name sizning-domen.uz;
+
+    server_tokens off;
+
+    ssl_certificate     /etc/letsencrypt/live/sizning-domen.uz/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sizning-domen.uz/privkey.pem;
+
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+
+    # Brauzerga "bu saytga faqat HTTPS bilan kir" deb aytadi.
+    # DIQQAT: bir marta yuborilgach brauzer buni bir yil eslab qoladi —
+    # HTTPS ishlayotganiga ishonch hosil qilgandan keyin yoqing.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    include /etc/nginx/snippets/app.conf;
+}

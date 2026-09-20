@@ -45,6 +45,11 @@ services:
       - key: RUN_SCHEDULER
         value: "1"
 
+      # Render ham reverse-proxy orqasida ishlaydi: haqiqiy mijoz IP si
+      # X-Forwarded-For dan olinadi (audit jurnali uchun).
+      - key: TRUSTED_PROXIES
+        value: "1"
+
       # --- Admin (Render so'raydi) ---
       - key: ADMIN_PHONE
         sync: false
