@@ -1,0 +1,19 @@
+# Loyiha Windows'da yoziladi, Linux serverda ishlaydi.
+# Shell skriptlar CRLF bilan ishlamaydi ("bad interpreter: /bin/bash^M"),
+# shuning uchun serverga boradigan fayllar doim LF bilan saqlanadi.
+* text=auto
+
+*.sh                text eol=lf
+Dockerfile          text eol=lf
+*.yml               text eol=lf
+*.yaml              text eol=lf
+*.conf              text eol=lf
+*.conf.example      text eol=lf
+.env.example        text eol=lf
+.dockerignore       text eol=lf
+
+*.bat               text eol=crlf
+
+*.png               binary
+*.jpg               binary
+*.ico               binary

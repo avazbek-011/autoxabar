@@ -55,6 +55,12 @@ def create_app():
 
     _apply_proxy_fix(app)
 
+    if not (os.environ.get("SECRET_KEY") or "").strip():
+        log.warning(
+            "SECRET_KEY berilmagan — vaqtinchalik kalit ishlatilmoqda, qayta "
+            "ishga tushganda hamma tizimdan chiqib ketadi. .env ga qo'shing."
+        )
+
     os.makedirs(config.UPLOAD_DIR, exist_ok=True)
     os.makedirs(config.SESSION_DIR, exist_ok=True)
     init_db()

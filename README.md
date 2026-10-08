@@ -219,6 +219,11 @@ nginx/                            KONTEYNER ichidagi nginx
 nginx/host/                       SERVERNING O'Z nginx'i uchun namunalar
   avtoxabar.vipads.uz.conf.example  sayt: TLS + Cloudflare + proxy
   dns.vipads.uz-click.conf.example  Click webhook uchun location bloki
+scripts/                          serverda ishlatiladi (7-bo'lim)
+  deploy.sh                         .env tekshiruvi, zaxira, yig'ish, ishga tushirish
+  backup.sh                         baza + sessiyalar + rasmlar zaxirasi
+  restore.sh                        zaxiradan tiklash
+.gitattributes                    .sh va sozlamalar doim LF bilan saqlanadi
 ```
 
 ---
@@ -253,15 +258,232 @@ Yangi akkauntlar uchun **10–15 daqiqalik interval** tavsiya etiladi.
 
 ---
 
-## 7. Ishlab chiqarishga chiqarish
+## 7. Serverga joylashtirish
 
-1. `.env` da `SECRET_KEY` ni uzun tasodifiy qatorga almashtiring
-2. `ADMIN_PASSWORD` ni o‘zgartiring
-3. `BASE_URL` ni haqiqiy domenga qo‘ying
-4. HTTPS orqasiga qo‘ying (Click faqat HTTPS endpoint bilan ishlaydi)
-5. `FLASK_DEBUG=0` ekanini tekshiring
+Ikki domen, bitta server (`185.80.234.161`, Ubuntu, o‘z nginx‘i bilan):
 
-Waitress bilan ishga tushirish (Windows uchun qulay):
+```
+Mijoz --HTTPS--> Cloudflare --> host nginx --> konteyner nginx --> gunicorn
+                                avtoxabar.vipads.uz
+
+Click --HTTPS---------------->  host nginx --> konteyner nginx --> gunicorn
+                                dns.vipads.uz/api/payments/click/webhook
+```
+
+Docker to‘plami faqat `127.0.0.1:8080` da tinglaydi — tashqariga
+serverning o‘z nginx‘i chiqaradi. TLS ham, Cloudflare sozlamalari ham
+o‘sha yerda.
+
+| Skript | Nima qiladi |
+|---|---|
+| `scripts/deploy.sh` | `.env` ni yaratadi/tekshiradi, zaxira oladi, konteynerlarni yig‘ib ko‘taradi, sog‘lig‘ini tekshiradi |
+| `scripts/backup.sh` | baza + Telegram sessiyalari + rasmlar → `backups/*.tar.gz` |
+| `scripts/restore.sh` | arxivdan tiklaydi (oldin hozirgi holatdan zaxira oladi) |
+
+### 7.1. Docker
+
+Kerak: Docker Engine va Compose plagini **2.24** yoki yangirog‘i.
+Serverda yo‘q bo‘lsa:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+```
+
+### 7.2. Kodni serverga olib chiqish
+
+Git orqali (tavsiya etiladi — keyin yangilash bitta buyruq):
+
+```bash
+git clone https://github.com/avazbek-011/autoxabar.git /opt/autoxabar
+```
+
+Git ishlatilmasa — kompyuterda arxiv yasab, `scp` bilan yuboring.
+`git archive` faqat repozitoriydagi fayllarni oladi (`.env`, mahalliy
+baza va sessiyalar tushmaydi) va qator oxirlarini Linux ko‘rinishida
+saqlaydi:
+
+```bash
+git archive --format=tar.gz -o autoxabar.tar.gz HEAD
+```
+
+```bash
+scp autoxabar.tar.gz root@185.80.234.161:/opt/
+```
+
+```bash
+mkdir -p /opt/autoxabar && tar xzf /opt/autoxabar.tar.gz -C /opt/autoxabar
+```
+
+> Papkani Windows‘dan to‘g‘ridan-to‘g‘ri nusxalamang: mahalliy `.env`,
+> baza va Telegram sessiyalari ham ketib qoladi, `.sh` fayllar esa
+> Windows qator oxirlari (CRLF) bilan ishlamaydi.
+
+### 7.3. Ilovani ishga tushirish
+
+```bash
+cd /opt/autoxabar && ./scripts/deploy.sh
+```
+
+Birinchi ishga tushishda skript `.env` yaratadi: `SECRET_KEY` va
+`ADMIN_PASSWORD` tasodifiy qiymat bilan to‘ldiriladi,
+`BASE_URL=https://avtoxabar.vipads.uz` qo‘yiladi, admin paroli ekranga
+chiqariladi va skript to‘xtaydi. `.env` ni tahrirlang (`nano .env`):
+
+| Kalit | Nima yoziladi |
+|---|---|
+| `ADMIN_PHONE` | o‘z raqamingiz (admin shu raqam bilan kiradi) |
+| `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` | <https://my.telegram.org> — bo‘lmasa DEMO rejim |
+| `CLICK_MERCHANT_ID`, `CLICK_SERVICE_ID`, `CLICK_MERCHANT_USER_ID`, `CLICK_SECRET_KEY` | Click merchant kabinetidan |
+
+va skriptni qayta ishga tushiring. U `.env` ni tekshiradi (bo‘sh
+`SECRET_KEY`, `FLASK_DEBUG=1` kabi xatolarda to‘xtaydi, bo‘sh Telegram /
+Click kalitlari haqida ogohlantiradi), konteynerlarni yig‘adi, ilova
+sog‘lom bo‘lguncha kutadi va `127.0.0.1:8080` javob berayotganini
+tekshiradi.
+
+### 7.4. Cloudflare va host nginx
+
+Brauzer ko‘radigan sertifikatni Cloudflare beradi. Host nginx‘dagi
+sertifikat faqat Cloudflare bilan server orasidagi ulanish uchun, shuning
+uchun **Cloudflare Origin Certificate** ishlatiladi — u 15 yil amal
+qiladi, certbot kerak emas.
+
+**1. DNS.** Cloudflare → DNS → Records → Add record:
+`A` · `avtoxabar` · `185.80.234.161` · Proxy status **Proxied** (to‘q sariq).
+
+**2. Origin Certificate.** Cloudflare → SSL/TLS → Origin Server
+→ Create Certificate. Hostname: `avtoxabar.vipads.uz`. Berilgan ikki
+matnni serverga saqlang:
+
+```
+/etc/ssl/cloudflare/avtoxabar.pem     <- Origin Certificate
+/etc/ssl/cloudflare/avtoxabar.key     <- Private Key   (chmod 600)
+```
+
+**3. SSL rejimi.** Cloudflare → SSL/TLS → Overview → **Full (strict)**.
+
+> «Flexible» qo‘ymang: Cloudflare serverga HTTP bilan murojaat qiladi,
+> nginx esa HTTPS ga yo‘naltiradi — cheksiz redirect halqasi hosil
+> bo‘ladi va sayt umuman ochilmay qoladi.
+
+**4. Host nginx — sayt.** Repozitoriy ildizidan:
+
+```bash
+sudo cp nginx/snippets/cloudflare-real-ip.conf /etc/nginx/snippets/
+```
+
+```bash
+sudo cp nginx/host/avtoxabar.vipads.uz.conf.example /etc/nginx/sites-available/avtoxabar.vipads.uz
+```
+
+```bash
+sudo ln -s ../sites-available/avtoxabar.vipads.uz /etc/nginx/sites-enabled/
+```
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**5. Host nginx — Click webhook.**
+`nginx/host/dns.vipads.uz-click.conf.example` dagi `location` blokini
+serverdagi mavjud `dns.vipads.uz` server bloki **ichiga** qo‘ying.
+Avval fayl boshidagi ogohlantirishni o‘qing: bu yo‘l uchun serverda eski
+qoida bor (POST → 403), u yangi blok bilan to‘qnashadi:
+
+```bash
+grep -rn "payments/click" /etc/nginx/
+```
+
+**6. Click kabineti.** Prepare URL va Complete URL maydonlarining
+ikkalasiga ham:
+
+```
+https://dns.vipads.uz/api/payments/click/webhook
+```
+
+**Haqiqiy mijoz IP si.** Cloudflare orqasida hamma so‘rov Cloudflare
+serverlaridan keladi. `cloudflare-real-ip.conf` haqiqiy IP ni
+`CF-Connecting-IP` sarlavhasidan oladi va bunga faqat Cloudflare
+diapazonlaridan kelgan so‘rovlarda ishonadi. Konteyner ichidagi nginx
+esa uni host nginx yuborgan `X-Forwarded-For` dan oladi
+(`upstream-real-ip.conf`), ilova esa `TRUSTED_PROXIES=1` bilan
+(compose‘da o‘rnatilgan). Cloudflare diapazonlari o‘zgarsa yangilang:
+
+```bash
+curl https://www.cloudflare.com/ips-v4 && curl https://www.cloudflare.com/ips-v6
+```
+
+**Ixtiyoriy himoya.** Server IP sini topib olgan odam Cloudflare‘ni
+chetlab o‘tmasligi uchun `nginx/snippets/cloudflare-only.conf` ni host
+nginx‘ning HTTPS blokiga include qiling — faqat DNS yozuvi «Proxied»
+ekaniga ishonch hosil qilgandan keyin, aks holda sayt o‘zingizga ham
+yopiladi.
+
+### 7.5. Tekshirish
+
+```bash
+curl -sI https://avtoxabar.vipads.uz | head -n 1
+```
+
+`HTTP/2 200` kutiladi. Click yo‘li ochiqligini tekshirish:
+
+```bash
+curl -s -X POST https://dns.vipads.uz/api/payments/click/webhook -d "action=0"
+```
+
+JSON kelishi kerak (imzo yo‘q, shuning uchun `"error": -8` normal).
+403 / 404 / 502 kelsa — host nginx sozlamasida xato bor.
+
+Admin panel: `https://avtoxabar.vipads.uz/kirish` → `ADMIN_PHONE` va
+`ADMIN_PASSWORD` bilan kiring.
+
+### 7.6. Yangilash
+
+```bash
+cd /opt/autoxabar && git pull && ./scripts/deploy.sh
+```
+
+Skript yangilashdan oldin avtomatik zaxira oladi. Baza va sessiyalar
+volume‘da bo‘lgani uchun yangilashda yo‘qolmaydi.
+
+### 7.7. Zaxira va tiklash
+
+```bash
+./scripts/backup.sh
+```
+
+Natija: `backups/autoxabar-YYYY-MM-DD-HHMMSS.tar.gz` — SQLite bazasi
+(ishlab turgan paytda ham butun holatda olinadi), Telegram sessiyalari
+va yuklangan rasmlar. Oxirgi 14 tasi saqlanadi (`BACKUP_KEEP` bilan
+o‘zgartiriladi). Har kuni avtomatik olish uchun `crontab -e` ga:
+
+```
+0 4 * * * cd /opt/autoxabar && ./scripts/backup.sh >> backups/backup.log 2>&1
+```
+
+> Arxivda Telegram sessiyalari bor — ular akkauntlarga to‘liq kirish
+> beradi. Arxivlar faqat egasiga o‘qiladi; serverdan tashqariga
+> shifrlanmagan holda ko‘chirmang.
+
+Tiklash (tasdiq so‘raydi, oldin hozirgi holatdan zaxira oladi):
+
+```bash
+./scripts/restore.sh backups/autoxabar-2026-10-08-040000.tar.gz
+```
+
+### 7.8. Muhim cheklovlar
+
+**Konteynerni ko‘paytirmang.** `--scale` yoki `replicas` ishlatilsa, fon
+vazifalari har bir nusxada qaytadan ishlaydi va bitta profil bir necha
+marta xabar yuboradi — Telegram akkaunti bloklanishi mumkin. Yuklama
+oshsa `Dockerfile` dagi `--threads` ni oshiring.
+
+**Proksi orqasida ishlash.** `TRUSTED_PROXIES=1` compose‘da o‘rnatilgan —
+shunda ilova haqiqiy mijoz IP sini va `https` sxemasini ko‘radi. Ilovani
+proksisiz, to‘g‘ridan-to‘g‘ri ochsangiz `TRUSTED_PROXIES=0` qiling, aks
+holda har kim o‘z IP sini soxtalashtira oladi.
+
+### Docker‘siz (Windows)
 
 ```bash
 pip install waitress
@@ -271,123 +493,9 @@ pip install waitress
 waitress-serve --host=0.0.0.0 --port=5000 app:app
 ```
 
-Fon vazifalari (yuborish sikli, avto-to‘lov) `create_app()` ichida yoqiladi,
-shuning uchun waitress/gunicorn ostida ham avtomatik ishlaydi.
-
-> Bir nechta ishchi jarayon (worker) ishlatsangiz, ulardan faqat bittasida
-> rejalashtiruvchi yonishi kerak — qolganlariga `.env` orqali
-> `RUN_SCHEDULER=0` bering, aks holda xabarlar takroran yuboriladi.
-
-### Docker + nginx bilan serverga qo‘yish
-
-```bash
-docker compose up -d --build
-```
-
-Ilova `--workers 1 --threads 8` bilan, root huquqisiz (`uid 10001`) ishlaydi
-va tashqariga port chiqarmaydi — hamma so‘rov nginx orqali o‘tadi.
-nginx `/static/` ni o‘zi beradi, qolganini gunicorn‘ga uzatadi.
-
-**Proksi orqasida ishlash.** `TRUSTED_PROXIES=1` compose‘da o‘rnatilgan —
-shunda ProxyFix `X-Forwarded-*` ni o‘qiydi va ilova haqiqiy mijoz IP sini
-hamda `https` sxemasini ko‘radi. Busiz audit jurnaliga nginx‘ning ichki IP
-si yoziladi va Click‘dan qaytish manzili `http://` bo‘lib qoladi.
-Ilovani to‘g‘ridan-to‘g‘ri ochsangiz `TRUSTED_PROXIES=0` qiling, aks
-holda har kim o‘z IP sini soxtalashtira oladi.
-
-#### Domen va HTTPS
-
-Ikki domen, bitta server (`185.80.234.161`):
-
-```
-Mijoz --HTTPS--> Cloudflare --> host nginx --> konteyner --> gunicorn
-                                avtoxabar.vipads.uz
-
-Click --HTTPS---------------->  host nginx --> konteyner --> gunicorn
-                                dns.vipads.uz/api/payments/click/webhook
-```
-
-Docker to‘plami faqat `127.0.0.1:8080` da tinglaydi — tashqariga
-serverning o‘z nginx‘i (nginx/1.24, Ubuntu) chiqaradi. TLS ham,
-Cloudflare sozlamalari ham o‘sha yerda. Tayyor namunalar:
-
-| Fayl | Nima uchun |
-|---|---|
-| `nginx/host/avtoxabar.vipads.uz.conf.example` | sayt uchun to‘liq server bloki |
-| `nginx/host/dns.vipads.uz-click.conf.example` | Click webhook uchun `location` bloki |
-
-Ularni serverga `/etc/nginx/sites-available/` ga qo‘ying, ichidagi
-yo‘riqnomaga amal qiling, so‘ng `nginx -t && systemctl reload nginx`.
-
-Brauzer ko‘radigan sertifikatni Cloudflare beradi. nginx‘dagi
-sertifikat faqat Cloudflare bilan server orasidagi ulanish uchun, shuning
-uchun **Cloudflare Origin Certificate** ishlatiladi — u 15 yil amal
-qiladi va yangilanishi shart emas (certbot kerak emas).
-
-**1. DNS.** Cloudflare → DNS → Records → Add record:
-`A` · `avtoxabar` · `<server IP>` · Proxy status **Proxied** (to‘q sariq).
-
-**2. Origin Certificate.** Cloudflare → SSL/TLS → Origin Server
-→ Create Certificate. Hostname: `avtoxabar.vipads.uz`. Berilgan ikki
-matnni serverga saqlang:
-
-```
-nginx/certs/origin.pem     <- Origin Certificate
-nginx/certs/origin.key     <- Private Key   (chmod 600)
-```
-
-Bu papka `.gitignore` da — kalitlar repozitoriyga tushmaydi.
-
-**3. SSL rejimi.** Cloudflare → SSL/TLS → Overview →
-**Full (strict)**.
-
-> «Flexible» qo‘ymang: Cloudflare serverga HTTP bilan murojaat qiladi,
-> nginx esa HTTPS ga yo‘naltiradi — cheksiz redirect halqasi hosil
-> bo‘ladi va sayt umuman ochilmay qoladi.
-
-**4. nginx.** `nginx/conf.d/autoxabar-ssl.conf.example` ni
-`autoxabar-ssl.conf` deb nomlang, `autoxabar.conf` dagi izohga amal qilib
-HTTPS redirect‘ni yoqing, so‘ng `docker compose restart nginx`.
-
-**5. Ilova.** `.env` da `BASE_URL=https://avtoxabar.vipads.uz`.
-Click kabinetida Prepare va Complete maydonlarining ikkalasiga ham:
-
-```
-https://dns.vipads.uz/api/payments/click/webhook
-```
-
-**Haqiqiy mijoz IP si.** Cloudflare orqasida hamma so‘rov Cloudflare
-serverlaridan keladi. `nginx/snippets/cloudflare-real-ip.conf` haqiqiy IP
-ni `CF-Connecting-IP` sarlavhasidan oladi va bunga faqat Cloudflare
-diapazonlaridan kelgan so‘rovlarda ishonadi. Diapazonlar o‘zgarsa
-yangilang:
-
-```bash
-curl https://www.cloudflare.com/ips-v4 && curl https://www.cloudflare.com/ips-v6
-```
-
-**Ixtiyoriy himoya.** Server IP sini topib olgan odam Cloudflare‘ni
-chetlab o‘tmasligi uchun `nginx/snippets/cloudflare-only.conf` ni
-HTTPS blokiga include qiling — faqat DNS yozuvi «Proxied» ekaniga
-ishonch hosil qilgandan keyin, aks holda sayt o‘zingizga ham yopiladi.
-
-**Konteynerni ko‘paytirmang.** `--scale` yoki `replicas` ishlatilsa, fon
-vazifalari har bir nusxada qaytadan ishlaydi va bitta profil bir necha marta
-xabar yuboradi — Telegram akkaunti bloklanishi mumkin. Yuklama oshsa
-`--threads` ni oshiring.
-
-Yangilash:
-
-```bash
-git pull && docker compose up -d --build
-```
-
-Baza va sessiyalar volume‘da bo‘lgani uchun yangilashda yo‘qolmaydi.
-Zaxira nusxa:
-
-```bash
-docker run --rm -v autoxabar_autoxabar-data:/data -v "%cd%":/backup alpine tar czf /backup/autoxabar-backup.tar.gz -C /data .
-```
+Fon vazifalari `create_app()` ichida yoqiladi, shuning uchun waitress
+ostida ham ishlaydi. `.env` da `SECRET_KEY`, `ADMIN_PASSWORD`,
+`BASE_URL` (https) va `FLASK_DEBUG=0` ni o‘zingiz to‘ldiring.
 
 > Render‘da hozir Python runtime ishlatiladi (`render.yaml`). Docker‘ga
 > o‘tmoqchi bo‘lsangiz, `runtime: python` ni `runtime: docker` ga

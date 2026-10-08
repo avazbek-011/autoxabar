@@ -29,7 +29,10 @@ def _str(key, default=""):
 
 class Config:
     # --- Umumiy ---
-    SECRET_KEY = _str("SECRET_KEY", "vipadsuz-dev-secret-change-me")
+    # .env da bo'lmasa — har ishga tushishda yangi tasodifiy kalit (qayta
+    # ishga tushganda hamma tizimdan chiqib ketadi). Qat'iy standart qiymat
+    # qo'yilmaydi: uni bilgan odam admin sessiyasini soxtalashtira oladi.
+    SECRET_KEY = _str("SECRET_KEY") or secrets.token_urlsafe(48)
     DEBUG = _str("FLASK_DEBUG", "0") in ("1", "true", "True")
     HOST = _str("HOST", "0.0.0.0")
     PORT = _int("PORT", 5000)

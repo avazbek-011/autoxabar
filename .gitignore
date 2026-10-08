@@ -25,6 +25,9 @@ data/*
 static/uploads/*
 !static/uploads/.gitkeep
 
+# Zaxira nusxalar (scripts/backup.sh) — baza va Telegram sessiyalari
+backups/
+
 # ============================================================
 #  Python
 # ============================================================

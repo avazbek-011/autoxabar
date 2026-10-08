@@ -1,4 +1,5 @@
 """SQLite ma'lumotlar bazasi: ulanish, sxema va boshlang'ich ma'lumotlar."""
+import logging
 import os
 import sqlite3
 import threading
@@ -563,6 +564,13 @@ def _ensure_admin(conn, secrets, generate_password_hash):
                 ),
             )
         conn.commit()
+        if not explicit_password:
+            # gunicorn ostida app.py dagi konsol xabari chiqmaydi — parolni
+            # faqat shu yerdan (docker compose logs) bilib olish mumkin.
+            logging.getLogger("db").warning(
+                "Admin yaratildi: %s / %s  — parolni .env dagi ADMIN_PASSWORD "
+                "ga yozib qo'ying", phone, config.ADMIN_PASSWORD,
+            )
         return
 
     if not explicit_password:

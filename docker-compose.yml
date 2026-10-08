@@ -19,9 +19,17 @@
 #  Mahalliy sinov uchun: http://127.0.0.1:8080
 #
 #  Sozlamalar .env faylidan o'qiladi. Fayl bo'lmasa ham ishga tushadi,
-#  lekin SECRET_KEY va ADMIN_PASSWORD tasodifiy bo'lib qoladi —
-#  avval `copy .env.example .env` qilib to'ldirgan ma'qul.
+#  lekin SECRET_KEY har safar yangilanadi (hamma tizimdan chiqib ketadi),
+#  ADMIN_PASSWORD esa faqat loglarda ko'rinadi. Serverda .env ni
+#  scripts/deploy.sh o'zi yaratadi.
 # ============================================================
+
+# Loyiha nomi qat'iy: papka nomi qanday bo'lmasin, volume'lar doim
+# autoxabar_autoxabar-data va autoxabar_autoxabar-uploads bo'ladi —
+# papka qayta nomlansa yoki boshqa joyga clone qilinsa, compose yangi
+# bo'sh volume yaratib, bazani "yo'qotib" qo'ymaydi.
+name: autoxabar
+
 services:
   autoxabar:
     build: .
