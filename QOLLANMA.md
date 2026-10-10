@@ -13,7 +13,7 @@
 4. [Saytdan foydalanish](#4-saytdan-foydalanish)
 5. [Pul: narx, obuna, to'lovlar](#5-pul-narx-obuna-tolovlar)
 6. [Admin panel va moliya hisoboti](#6-admin-panel-va-moliya-hisoboti)
-7. [Click'ni ulash](#7-clickni-ulash)
+7. [To'lovni ulash (Payment Hub)](#7-tolovni-ulash-payment-hub)
 8. [Kompyuterda ishga tushirish](#8-kompyuterda-ishga-tushirish)
 9. [Muammolar va yechimlar](#9-muammolar-va-yechimlar)
 10. [Muhim ma'lumotlar](#10-muhim-malumotlar)
@@ -348,76 +348,69 @@ hammasi kodga tegmasdan o'zgartiriladi.
 
 ---
 
-## 7. Click'ni ulash
+## 7. To'lovni ulash (Payment Hub)
 
-Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
+Ilova Click bilan to'g'ridan-to'g'ri ishlamaydi. To'lovlar kompaniyaning
+yagona to'lov shlyuzi — **Payment Hub** — orqali o'tadi: barcha dasturlar
+bitta umumiy Click servisidan foydalanadi. Shuning uchun **Click
+kabinetida hech narsa sozlanmaydi** — faqat hub administratori bilan
+kalit almashasiz.
 
-> **Avval o'qing.** Bepul Render tarifida Click'ni ulamang: xizmat 15 daqiqa
-> harakatsizlikdan keyin uxlaydi, Click'ning so'rovlari timeout bo'ladi va
-> to'lov Click tomonda qo'lda tekshiruvga tushadi. Bundan tashqari bepul
-> tarifda baza saqlanmaydi — to'lovlar tarixi har deployda yo'qoladi.
-> Ketma-ketlik: **Starter tarif → doimiy disk → keyin Click**.
+> **Avval o'qing.** To'lovni faqat doimiy ishlaydigan serverda yoqing
+> (README, 7-bo'lim). Bepul Render tarifida baza saqlanmaydi va xizmat
+> uxlab qoladi — to'lovlar tarixi yo'qoladi, hub webhook'lari yetkazilmaydi.
 
-> **Manzil:** sayt `https://avtoxabar.vipads.uz` domenida ishlaydi.
-> Click manzillari ham shu domen bilan yoziladi. Domen hali sozlanmagan
-> bo'lsa, avval uni ishga tushiring (README, 7-bo'lim) — Click faqat
-> ishlayotgan HTTPS manzilni qabul qiladi.
+### Hub administratoriga yuboring
 
-### Click kabinetida
+| Ma'lumot | Qiymat |
+|---|---|
+| Dastur kodi | `autoxabar` |
+| Dastur nomi | AutoXabar |
+| Webhook URL | `https://avtoxabar.vipads.uz/api/payments/hub/webhook` |
+| return_url manzillari | `avtoxabar.vipads.uz` |
+| Prepare tekshiruvi | kerak emas |
 
-1. Click merchant kabinetiga kiring (<https://merchant.click.uz>)
-2. **Servis yarating** (SHOP API sxemasi bo'yicha)
-3. Servis sozlamalarida **Prepare URL** va **Complete URL**
-   maydonlarining **ikkalasiga ham bitta manzil** yozing:
+> Webhook URL va domenni admin panelning **Tizim holati** bo'limidan ham
+> nusxalab olsangiz bo'ladi.
 
-```
-https://dns.vipads.uz/api/payments/click/webhook
-```
+### Administrator sizga beradi
 
-   Click qaysi bosqich ekanini so'rovning o'zida (`action` maydoni)
-   aytadi, shuning uchun alohida ikkita manzil shart emas.
-
-> Bu ikkita manzilni admin panelning **Tizim holati** bo'limidan ham
-> nusxalab olsangiz bo'ladi — u yerda joriy domen bilan ko'rsatiladi.
-
-4. Payme'dagidek alohida "buyurtma maydoni" yaratish **shart emas**:
-   Click buyurtma raqamini `merchant_trans_id` maydonida o'zi qaytaradi.
-
-5. Ulanish tugagach Click sizga 4 ta qiymat beradi:
-   `merchant_id`, `service_id`, `merchant_user_id`, `secret_key`
-
-### Render'da kalitlarni kiritish
-
-Render → xizmatingiz → **`Environment`** → quyidagilarni to'ldiring:
+Maxfiy kanal orqali uchta qiymat: hub manzili, API kaliti (`ph_live_...`)
+va webhook siri. Ularni serverdagi `.env` fayliga yozing:
 
 ```
-CLICK_MERCHANT_ID       = merchant_id
-CLICK_SERVICE_ID        = service_id
-CLICK_MERCHANT_USER_ID  = merchant_user_id
-CLICK_SECRET_KEY        = secret_key
+PAYMENT_HUB_URL=https://hub.example.uz
+PAYMENT_HUB_API_KEY=ph_live_...
+PAYMENT_HUB_WEBHOOK_SECRET=...
+PAYMENT_HUB_PROVIDER=click
 ```
 
-**`Save Changes`** → xizmat o'zi qayta ishga tushadi.
+So'ng ilovani qayta ishga tushiring: `./scripts/deploy.sh`.
 
-> `CLICK_SECRET_KEY` — eng maxfiy qiymat. U bilan har qanday odam soxta
-> "to'landi" so'rovi yubora oladi. Uni hech kimga bermang va repozitoriyga
-> yozmang.
+> API kaliti va webhook siri — eng maxfiy qiymatlar. Sir bilan har qanday
+> odam soxta "to'landi" xabarini yubora oladi. Ularni hech kimga bermang va
+> repozitoriyga yozmang. Oshkor bo'lsa — administratordan yangisini so'rang,
+> eskisi darhol o'chiriladi.
 
 ### To'lov qanday kechadi
 
 1. Foydalanuvchi kabinetda **«Click orqali 5 000 so'm»** tugmasini bosadi
-2. Tizim `pending` holatidagi to'lov yozuvini yaratadi va Click sahifasiga
+2. Ilova hub'da to'lov yaratadi va foydalanuvchini Click sahifasiga
    yo'naltiradi
-3. Foydalanuvchi UzCard yoki Humo kartasi bilan to'laydi
-4. Click bizga **Prepare** (tekshirish), so'ng **Complete** (yakunlash)
-   so'rovini yuboradi
-5. Complete muvaffaqiyatli bo'lgach: to'lov `paid` bo'ladi, obuna 30 kunga
-   uzayadi, profil PRO rejimga o'tadi va moliya daftariga yoziladi
-6. Foydalanuvchi **«To'lov qabul qilindi»** sahifasiga qaytadi
+3. Foydalanuvchi UzCard yoki Humo kartasi bilan to'laydi (karta
+   ma'lumotlari na ilovaga, na hub'ga keladi)
+4. Hub ilovaga **payment.succeeded** xabarini yuboradi (imzo bilan)
+5. To'lov `paid` bo'ladi, obuna 30 kunga uzayadi, profil PRO rejimga
+   o'tadi va moliya daftariga yoziladi
+6. Foydalanuvchi natija sahifasiga qaytadi — sahifa tasdiq kelguncha
+   o'zini yangilab turadi
+
+Xabar kelmay qolsa ham to'lov yo'qolmaydi: ilova har 10 daqiqada ochiq
+to'lovlar holatini hub'dan o'zi so'raydi.
 
 ### Obuna yangilanishi
 
-Click SHOP API kartani saqlashga ruxsat bermaydi, shuning uchun obuna
+Hub kartani saqlab, keyin avtomatik yechmaydi, shuning uchun obuna
 **qo'lda** yangilanadi:
 
 1. Muddat tugashiga 3 kun qolganda foydalanuvchiga eslatma boradi
@@ -426,10 +419,14 @@ Click SHOP API kartani saqlashga ruxsat bermaydi, shuning uchun obuna
 
 ### Sinov
 
-Kalitlarni kiritgach, admin panel → **Tizim holati** bo'limida
-**Click: Sozlangan** yozuvi paydo bo'lishi kerak. Keyin kichik summa bilan
-haqiqiy to'lov qilib ko'ring va **To'lovlar** bo'limida `paid` holatga
-o'tganini tekshiring.
+Avval **sinov hub'ida** tekshiring: administratordan sinov hub'ining
+manzili, kaliti va siri olinadi, `.env` da `PAYMENT_HUB_PROVIDER=mock`
+qo'yiladi — pul yechilmaydi. Hammasi ishlagach, ishchi hub kalitlari va
+`PAYMENT_HUB_PROVIDER=click` bilan almashtiring.
+
+Admin panel → **Tizim holati** bo'limida **To'lov shlyuzi: Sozlangan**
+yozuvi va oxirgi webhook vaqti ko'rinadi. Kichik summa bilan haqiqiy
+to'lov qilib, **To'lovlar** bo'limida `paid` holatga o'tganini tekshiring.
 
 ---
 
@@ -583,7 +580,7 @@ Bu fayllar `.gitignore` da, ya'ni GitHub'ga hech qachon tushmaydi:
 
 | Fayl | Nima bor |
 |---|---|
-| `.env` | Telegram kalitlari, parollar, Click kalitlari |
+| `.env` | Telegram kalitlari, parollar, Payment Hub kalitlari |
 | `data/autoxabar.db` | Foydalanuvchilar, to'lovlar, parol hashlari |
 | `sessions/` | Telegram sessiyalari |
 
@@ -626,5 +623,5 @@ Har birini **Admin → Tizim holati** dan qo'lda ham ishga tushirish mumkin.
 2. ☐ QR orqali Telegram akkauntingizni ulang
 3. ☐ Xabar yozing, 1–2 guruhda sinab ko'ring
 4. ☐ Ishonch hosil qilgach barcha guruhlarni yoqing
-5. ☐ Click kalitlarini oling va ulang (7-bo'lim)
+5. ☐ Payment Hub kalitlarini oling va ulang (7-bo'lim)
 6. ☐ Mijozlar kelganda Starter tarifga o'ting

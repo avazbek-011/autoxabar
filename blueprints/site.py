@@ -1,9 +1,9 @@
 """Ochiq sahifalar: bosh sahifa, narxlar, qo'llanma, hujjatlar."""
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, url_for
 
 from core.auth import current_user
 from core.db import query, scalar
-from services import billing
+from services import billing, payment_hub
 
 bp = Blueprint("site", __name__)
 
@@ -58,10 +58,19 @@ def privacy():
     return render_template("site/privacy.html")
 
 
+# Natija sahifasi to'lov "kutilmoqda" bo'lsa o'zini shuncha marta yangilaydi
+RESULT_REFRESHES = 24   # x 5 soniya = 2 daqiqa
+
+
 @bp.route("/tolov/natija")
 def payment_result():
-    """To'lov tizimidan qaytish sahifasi (Click `return_url`)."""
+    """To'lovdan qaytish sahifasi (Payment Hub `return_url`).
+
+    Bu yerga qaytish "to'landi" degani EMAS — mijoz to'lamasdan ham qaytishi
+    mumkin. Holat faqat webhook'dan yoki hub'dan so'rab olinadi.
+    """
     payment_id = request.args.get("payment_id", type=int)
+    attempt = request.args.get("n", 0, type=int)
     payment = None
     if payment_id:
         payment = query("SELECT * FROM payments WHERE id = ?", (payment_id,), one=True)
@@ -71,7 +80,16 @@ def payment_result():
             payment = None
         elif payment and not user:
             payment = None
-    return render_template("site/payment_result.html", payment=payment)
+
+    if payment and payment["status"] == "pending":
+        # Webhook hali kelmagan bo'lishi mumkin — holatni hub'dan so'raymiz
+        payment_hub.refresh(payment["id"])
+        payment = query("SELECT * FROM payments WHERE id = ?", (payment["id"],), one=True)
+
+    next_url = None
+    if payment and payment["status"] == "pending" and attempt < RESULT_REFRESHES:
+        next_url = url_for("site.payment_result", payment_id=payment["id"], n=attempt + 1)
+    return render_template("site/payment_result.html", payment=payment, next_url=next_url)
 
 
 @bp.route("/api/stats")

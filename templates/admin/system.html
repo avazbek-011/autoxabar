@@ -27,15 +27,15 @@
     <div class="stat-sub">Telethon: {{ 'bor' if telethon else 'yo‘q' }}</div>
   </div>
 
-  <div class="stat {{ 'is-ok' if click_ready else 'is-warn' }}">
+  <div class="stat {{ 'is-ok' if hub_ready else 'is-warn' }}">
     <div class="stat-top">
-      <span class="stat-label">Click</span>
+      <span class="stat-label">To‘lov shlyuzi</span>
       <span class="stat-ico">{{ icon('card', 17) }}</span>
     </div>
     <div class="stat-value" style="font-size:1.2rem">
-      {{ 'Sozlangan' if click_ready else 'Sozlanmagan' }}
+      {{ 'Sozlangan' if hub_ready else 'Sozlanmagan' }}
     </div>
-    <div class="stat-sub">to‘lov qabul qilish</div>
+    <div class="stat-sub">Payment Hub · {{ hub_provider }}</div>
   </div>
 
   <div class="stat {{ 'is-ok' if payme_subscribe else 'is-warn' }}">
@@ -52,39 +52,37 @@
 
 <div class="grid g2">
   <div class="card">
-    <div class="card-head"><div class="card-title">{{ icon('link', 19) }} Click sozlash</div></div>
+    <div class="card-head"><div class="card-title">{{ icon('link', 19) }} To‘lov shlyuzi (Payment Hub)</div></div>
     <p class="small muted mb">
-      Click merchant kabinetida <b>Prepare URL</b> va <b>Complete URL</b> maydonlarining
-      <b>ikkalasiga ham</b> shu bitta manzilni yozing — qaysi bosqich ekanini
-      so‘rovning o‘zi (<span class="mono">action</span>) aytadi:
+      Click bilan to‘g‘ridan-to‘g‘ri ishlanmaydi: to‘lov kompaniyaning Payment Hub‘ida
+      yaratiladi, natija webhook orqali keladi. Hub administratoriga quyidagilarni yuboring:
     </p>
+    <p class="small muted">Webhook URL</p>
     <div class="copy-box mb">
-      <span class="grow">{{ click_webhook_url }}</span>
-      <button class="btn-icon" data-copy="{{ click_webhook_url }}">{{ icon('copy', 16) }}</button>
+      <span class="grow">{{ hub_webhook_url }}</span>
+      <button class="btn-icon" data-copy="{{ hub_webhook_url }}">{{ icon('copy', 16) }}</button>
     </div>
-    <details class="mb">
-      <summary class="small muted">Alohida ikkita manzil kerak bo‘lsa</summary>
-      <p class="small muted mt">Prepare URL (action = 0)</p>
-      <div class="copy-box mb">
-        <span class="grow">{{ click_prepare_url }}</span>
-        <button class="btn-icon" data-copy="{{ click_prepare_url }}">{{ icon('copy', 16) }}</button>
-      </div>
-      <p class="small muted">Complete URL (action = 1)</p>
-      <div class="copy-box">
-        <span class="grow">{{ click_complete_url }}</span>
-        <button class="btn-icon" data-copy="{{ click_complete_url }}">{{ icon('copy', 16) }}</button>
-      </div>
-    </details>
-    <p class="small muted mb">
-      Buyurtma raqami sifatida <b>to‘lov ID</b> si ishlatiladi — Click uni
-      <span class="mono">merchant_trans_id</span> maydonida qaytaradi.
-    </p>
+    <p class="small muted">return_url manzillari</p>
+    <div class="copy-box mb">
+      <span class="grow">{{ hub_return_host }}</span>
+      <button class="btn-icon" data-copy="{{ hub_return_host }}">{{ icon('copy', 16) }}</button>
+    </div>
+    <div class="table-wrap mb">
+      <table class="table" style="min-width:auto">
+        <tbody>
+          <tr><td>Hub manzili</td><td class="mono small">{{ hub_url or '—' }}</td></tr>
+          <tr><td>Provider</td><td class="mono small">{{ hub_provider }}</td></tr>
+          <tr><td>Oxirgi webhook</td><td class="small">{{ hub_last_webhook | dt if hub_last_webhook else 'hali kelmagan' }}</td></tr>
+          <tr><td>Ochiq to‘lovlar</td><td class="num bold">{{ hub_open | num }}</td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="alert alert-info">
       {{ icon('info', 19) }}
       <div class="small">
         Kalitlar <span class="mono">.env</span> faylida saqlanadi:
-        <span class="mono">CLICK_MERCHANT_ID</span>, <span class="mono">CLICK_SERVICE_ID</span>,
-        <span class="mono">CLICK_MERCHANT_USER_ID</span>, <span class="mono">CLICK_SECRET_KEY</span>.
+        <span class="mono">PAYMENT_HUB_URL</span>, <span class="mono">PAYMENT_HUB_API_KEY</span>,
+        <span class="mono">PAYMENT_HUB_WEBHOOK_SECRET</span>.
       </div>
     </div>
   </div>
@@ -97,6 +95,7 @@
         ('counters', 'refresh', 'Hisoblagichlarni yangilash', '24 soatlik va guruh sonlarini qayta hisoblaydi'),
         ('charge', 'card', 'Avto-to‘lovlarni bajarish', 'Muddati kelgan obunalarni kartadan to‘laydi'),
         ('expire', 'clock', 'Muddati tugaganlarni yopish', 'Vaqti o‘tgan obunalarni to‘xtatadi'),
+        ('hub_sync', 'refresh', 'To‘lovlarni hub bilan solishtirish', 'Webhook kelmagan ochiq to‘lovlar holatini so‘raydi'),
         ('cleanup', 'trash', 'Eski jurnallarni tozalash', '14 kundan eski yozuvlarni o‘chiradi')
       ] %}
       {% for act, ico, title, desc in actions %}

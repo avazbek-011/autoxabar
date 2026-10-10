@@ -40,6 +40,7 @@
           </td>
           <td class="xs">
             {% if p.method == 'click' %}<span class="badge badge-info">Click</span>
+            {% elif p.method == 'mock' %}<span class="badge badge-muted">Sinov</span>
             {% elif p.method == 'payme_auto' %}<span class="badge badge-gold">Avto</span>
             {% elif p.method == 'payme' %}<span class="badge badge-info">Payme</span>
             {% elif p.method == 'balance' %}<span class="badge badge-muted">Balans</span>

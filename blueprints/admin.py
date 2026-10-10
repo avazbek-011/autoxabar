@@ -1,5 +1,6 @@
 """Administrator paneli: umumiy ko'rinish, moliya, foydalanuvchilar, sozlamalar."""
 from datetime import timedelta
+from urllib.parse import urlsplit
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
@@ -18,8 +19,7 @@ from core.db import (
     update,
 )
 from core.utils import audit, notify, safe_int
-from services import billing, scheduler, worker
-from services import click as click_svc
+from services import billing, payment_hub, scheduler, worker
 from services import finance as fin
 from services import telegram_engine as tg
 
@@ -526,10 +526,17 @@ def system():
         engine=tg.engine_mode(),
         telethon=tg.TELETHON_AVAILABLE,
         db_size=db_size,
-        click_ready=click_svc.configured(),
-        click_webhook_url=config.BASE_URL + "/api/payments/click/webhook",
-        click_prepare_url=config.BASE_URL + "/api/click/prepare",
-        click_complete_url=config.BASE_URL + "/api/click/complete",
+        hub_ready=payment_hub.configured(),
+        hub_provider=config.PAYMENT_HUB_PROVIDER,
+        hub_url=config.PAYMENT_HUB_URL,
+        hub_webhook_url=payment_hub.webhook_url(),
+        hub_return_host=urlsplit(config.BASE_URL).hostname or "",
+        hub_last_webhook=scalar("SELECT MAX(received_at) FROM hub_webhook_deliveries",
+                                default=None),
+        hub_open=scalar(
+            "SELECT COUNT(*) FROM hub_payments h JOIN payments p ON p.id = h.payment_id "
+            "WHERE p.status = 'pending'"
+        ),
         payme_merchant=bool(config.PAYME_MERCHANT_ID and config.PAYME_KEY),
         payme_subscribe=bool(config.PAYME_SUBSCRIBE_ID and config.PAYME_SUBSCRIBE_KEY),
         merchant_url=config.BASE_URL + "/api/payme",
@@ -551,6 +558,9 @@ def system_action():
     elif action == "expire":
         count = billing.expire_overdue()
         flash("{} ta obuna yopildi".format(count), "info")
+    elif action == "hub_sync":
+        count = payment_hub.reconcile_pending()
+        flash("{} ta ochiq to‘lov holati hub’dan tekshirildi".format(count), "info")
     elif action == "cleanup":
         worker.cleanup_logs()
         flash("Eski jurnallar tozalandi", "success")

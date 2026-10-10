@@ -25,18 +25,23 @@
     <div class="stat-sub">{{ 'avto-to‘lov tayyor' if cards else 'karta qo‘shilmagan' }}</div>
   </div>
   {% else %}
-  <div class="stat {{ 'is-ok' if click_ready else 'is-warn' }}">
+  <div class="stat {{ 'is-ok' if pay_ready else 'is-warn' }}">
     <div class="stat-top"><span class="stat-label">To‘lov usuli</span><span class="stat-ico">{{ icon('card', 17) }}</span></div>
-    <div class="stat-value" style="font-size:1.2rem">Click</div>
-    <div class="stat-sub">{{ 'UzCard / Humo onlayn' if click_ready else 'sozlanmagan' }}</div>
+    <div class="stat-value" style="font-size:1.2rem">{{ 'Click' if pay_provider == 'click' else 'Sinov' }}</div>
+    <div class="stat-sub">{{ 'UzCard / Humo onlayn' if pay_ready else 'sozlanmagan' }}</div>
   </div>
   {% endif %}
 </div>
 
-{% if not click_ready %}
+{% if not pay_ready %}
 <div class="alert alert-warn">
   {{ icon('alert', 19) }}
-  <div><b>To‘lov tizimi sozlanmagan.</b> Administrator Click kalitlarini kiritishi kerak.</div>
+  <div><b>To‘lov tizimi sozlanmagan.</b> Administrator to‘lov shlyuzi kalitlarini kiritishi kerak.</div>
+</div>
+{% elif pay_provider != 'click' %}
+<div class="alert alert-info">
+  {{ icon('info', 19) }}
+  <div><b>Sinov rejimi.</b> To‘lovlar haqiqiy pulsiz o‘tkaziladi.</div>
 </div>
 {% endif %}
 
@@ -104,8 +109,8 @@
         <form method="post" action="{{ url_for('cabinet.payment_create') }}" class="grow">
           <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <input type="hidden" name="profile_id" value="{{ p.id }}">
-          <button class="btn btn-primary btn-sm btn-block" {{ 'disabled' if not click_ready }}>
-            {{ icon('card', 15) }} Click orqali {{ price | num }} so‘m
+          <button class="btn btn-primary btn-sm btn-block" {{ 'disabled' if not pay_ready }}>
+            {{ icon('card', 15) }} {{ 'Click orqali' if pay_provider == 'click' else 'To‘lash' }} {{ price | num }} so‘m
           </button>
         </form>
         {% if user.balance >= price %}
@@ -252,6 +257,7 @@
             </td>
             <td class="xs">
               {% if p.method == 'click' %}Click
+              {% elif p.method == 'mock' %}Sinov
               {% elif p.method == 'payme_auto' %}Avto-to‘lov
               {% elif p.method == 'payme' %}Payme
               {% elif p.method == 'balance' %}Balans

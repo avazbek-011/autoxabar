@@ -4,7 +4,7 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from services import billing, worker
+from services import billing, payment_hub, worker
 from services import telegram_engine as tg
 
 log = logging.getLogger("scheduler")
@@ -36,6 +36,12 @@ def _expire():
     billing.notify_expiring()
 
 
+def _hub_sync():
+    count = payment_hub.reconcile_pending()
+    if count:
+        log.info("Payment Hub: %s ta ochiq to'lov holati tekshirildi", count)
+
+
 def start(app=None):
     """Rejalashtiruvchini ishga tushiradi (bir marta)."""
     global _scheduler
@@ -57,6 +63,9 @@ def start(app=None):
 
     # Avto-to'lovlar — har 30 daqiqada
     sched.add_job(_safe(_charge_due, "charge"), "interval", minutes=30, id="charge")
+
+    # Webhook kelmay qolgan to'lovlarni hub'dan so'rash — har 10 daqiqada
+    sched.add_job(_safe(_hub_sync, "hub_sync"), "interval", minutes=10, id="hub_sync")
 
     # Muddati tugaganlar — soatiga bir marta
     sched.add_job(_safe(_expire, "expire"), "interval", minutes=60, id="expire")

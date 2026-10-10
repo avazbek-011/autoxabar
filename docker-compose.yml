@@ -9,8 +9,8 @@
 #
 #    Mijoz --HTTPS--> Cloudflare --> host nginx --> bu to'plam
 #                                    (avtoxabar.vipads.uz)
-#    Click --HTTPS-----------------> host nginx --> bu to'plam
-#                                    (dns.vipads.uz/api/payments/click/webhook)
+#    Payment Hub --webhook--> Cloudflare --> host nginx --> bu to'plam
+#                                    (/api/payments/hub/webhook)
 #
 #  To'plam faqat 127.0.0.1:8080 da tinglaydi — tashqariga serverning
 #  o'z nginx'i chiqaradi. TLS va Cloudflare sozlamalari ham o'sha

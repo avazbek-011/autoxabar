@@ -37,9 +37,7 @@ ASSET_VERSION = "1.0.0"
 # CSRF tekshiruvidan ozod yo'llar (tashqi xizmatlar chaqiradi)
 CSRF_EXEMPT = {
     "payme.merchant_endpoint",
-    "click.webhook",
-    "click.prepare",
-    "click.complete",
+    "hub.webhook",
 }
 
 
@@ -80,7 +78,7 @@ def _apply_proxy_fix(app):
 
     Ularsiz `request.remote_addr` proksining IP si bo'ladi (audit jurnali
     foydasiz), `url_for(..., _external=True)` esa https o'rniga http
-    yasaydi — Click'dan qaytish manzili buziladi.
+    yasaydi.
 
     TRUSTED_PROXIES = 0 bo'lsa hech narsa qilinmaydi: ilova to'g'ridan-to'g'ri
     ochilganda X-Forwarded-For ga ishonish IP ni soxtalashtirishga yo'l ochadi.
@@ -238,7 +236,7 @@ def _register_blueprints(app):
     from blueprints.admin import bp as admin_bp
     from blueprints.auth_bp import bp as auth_bp
     from blueprints.cabinet import bp as cabinet_bp
-    from blueprints.click_bp import bp as click_bp
+    from blueprints.hub_bp import bp as hub_bp
     from blueprints.payme_bp import bp as payme_bp
     from blueprints.site import bp as site_bp
 
@@ -247,7 +245,7 @@ def _register_blueprints(app):
     app.register_blueprint(cabinet_bp, url_prefix="/kabinet")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(payme_bp)
-    app.register_blueprint(click_bp)
+    app.register_blueprint(hub_bp)
 
 
 # ------------------------------------------------------------------ xatoliklar
@@ -282,7 +280,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    from services import click as click_svc
+    from services import payment_hub
     from services.telegram_engine import engine_mode
 
     # Windows konsoli UTF-8 ni qo'llab-quvvatlamasligi mumkin
@@ -301,8 +299,9 @@ if __name__ == "__main__":
     print("   Narx       : {} so'm / profil / oy".format(config.PRICE_PER_PROFILE))
     print("   Soliq      : {}%".format(config.TAX_PERCENT))
     print("   Telegram   : {} rejim".format(engine_mode().upper()))
-    print("   Click      : {}".format(
-        "sozlangan" if click_svc.configured() else "sozlanmagan (.env)"))
+    print("   To'lov     : {}".format(
+        "Payment Hub ({})".format(config.PAYMENT_HUB_PROVIDER)
+        if payment_hub.configured() else "sozlanmagan (PAYMENT_HUB_* .env da)"))
     print(line)
     print("")
 

@@ -86,14 +86,15 @@ class Config:
     PAYME_SUBSCRIBE_ID = _str("PAYME_SUBSCRIBE_ID")
     PAYME_SUBSCRIBE_KEY = _str("PAYME_SUBSCRIBE_KEY")
 
-    # --- Click SHOP API (to'lovni qabul qilish) ---
-    CLICK_MERCHANT_ID = _str("CLICK_MERCHANT_ID")
-    CLICK_SERVICE_ID = _str("CLICK_SERVICE_ID")
-    CLICK_MERCHANT_USER_ID = _str("CLICK_MERCHANT_USER_ID")
-    CLICK_SECRET_KEY = _str("CLICK_SECRET_KEY")
-    CLICK_CHECKOUT_URL = _str(
-        "CLICK_CHECKOUT_URL", "https://my.click.uz/services/pay"
-    ).rstrip("/")
+    # --- Payment Hub (kompaniyaning yagona to'lov shlyuzi, Click shu orqali) ---
+    # Hub administratori beradi: manzil, API kaliti (ph_live_...), webhook siri.
+    PAYMENT_HUB_URL = _str("PAYMENT_HUB_URL").rstrip("/")
+    PAYMENT_HUB_API_KEY = _str("PAYMENT_HUB_API_KEY")
+    PAYMENT_HUB_WEBHOOK_SECRET = _str("PAYMENT_HUB_WEBHOOK_SECRET")
+    # click — ishchi hub; mock — faqat sinov hub'ida (haqiqiy pulsiz)
+    PAYMENT_HUB_PROVIDER = _str("PAYMENT_HUB_PROVIDER", "click")
+    # Hub'dagi order_id boshlanishi: AX-<to'lov id>-<tasodifiy>
+    PAYMENT_HUB_ORDER_PREFIX = _str("PAYMENT_HUB_ORDER_PREFIX", "AX-")
 
     # --- Telegram ---
     TELEGRAM_API_ID = _int("TELEGRAM_API_ID", 0)

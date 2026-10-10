@@ -42,9 +42,9 @@ from core.utils import (
     sanitize_ad_html,
 )
 from services import billing as billing_svc
+from services import payment_hub
 from services import worker
 from services import telegram_engine as tg
-from services import click as click_svc
 from services.payme import subscribe_api
 
 log = logging.getLogger("cabinet")
@@ -878,7 +878,8 @@ def billing():
         price=billing_svc.price(),
         monthly=monthly,
         card_pending=session.get("card_pending"),
-        click_ready=click_svc.configured(),
+        pay_ready=payment_hub.configured(),
+        pay_provider=config.PAYMENT_HUB_PROVIDER,
         subscribe_ready=subscribe_api.configured,
     )
 
@@ -886,7 +887,7 @@ def billing():
 @bp.route("/tolov/yaratish", methods=["POST"])
 @login_required
 def payment_create():
-    """Click to'lov sahifasi orqali bir martalik to'lov."""
+    """Payment Hub orqali bir martalik to'lov (mijoz Click sahifasida to'laydi)."""
     user = current_user()
     profile_id = safe_int(request.form.get("profile_id"), 0)
     profile = own_profile_or_404(profile_id) if profile_id else None
@@ -895,7 +896,7 @@ def payment_create():
         return redirect(url_for("cabinet.billing"))
 
     # Kalitlar yo'q bo'lsa bo'sh "pending" to'lov yaratmaymiz
-    if not click_svc.configured():
+    if not payment_hub.configured():
         flash("To‘lov tizimi hali sozlanmagan. Administratorga murojaat qiling", "error")
         return redirect(url_for("cabinet.billing"))
 
@@ -904,14 +905,22 @@ def payment_create():
         user["id"],
         amount,
         profile_id=profile_id,
-        method="click",
+        method=config.PAYMENT_HUB_PROVIDER,
         description="AutoXabar PRO — {}".format(profile["title"] or profile["phone"]),
     )
+    payment = query("SELECT * FROM payments WHERE id = ?", (payment_id,), one=True)
 
-    back = url_for("site.payment_result", payment_id=payment_id, _external=True)
-    url = click_svc.checkout_url(payment_id, amount, return_url=back)
-    if not url:
-        flash("To‘lov havolasini yaratib bo‘lmadi", "error")
+    # Hub return_url ni administratorga berilgan domenlar ro'yxati bilan
+    # solishtiradi, shuning uchun so'rov Host'idan emas, BASE_URL dan quriladi.
+    back = config.BASE_URL + url_for("site.payment_result", payment_id=payment_id)
+    try:
+        url = payment_hub.create_checkout(payment, back)
+    except payment_hub.HubError as exc:
+        log.error("Hub to'lov yaratmadi (payment %s): %s %s",
+                  payment_id, exc.code, exc.message)
+        update("payments", {"status": "failed", "updated_at": now_str()},
+               "id = ?", (payment_id,))
+        flash("To‘lov sahifasini ochib bo‘lmadi. Birozdan so‘ng qayta urinib ko‘ring", "error")
         return redirect(url_for("cabinet.billing"))
     return redirect(url)
 

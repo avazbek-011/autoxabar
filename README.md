@@ -6,7 +6,8 @@ Telegram akkauntingizni ulaysiz — tizim sizning e'loningizni siz a'zo bo‘lga
 barcha guruhlarga belgilangan interval bilan avtomatik yuboradi.
 
 - **Narx:** 1 profil = 1 oy = **5 000 so‘m** (sozlamalardan o‘zgartiriladi)
-- **To‘lov:** Click (SHOP API — UzCard / Humo, har 30 kunga alohida to‘lov)
+- **To‘lov:** Click (UzCard / Humo) — kompaniyaning **Payment Hub** shlyuzi orqali,
+  har 30 kunga alohida to‘lov
 - **Moliya:** har bir tushum yalpi → komissiya → **soliq 10%** → **sof foyda** ga ajratiladi,
   oylik hisobot va bankdan yechib olish hisobi yuritiladi
 
@@ -89,53 +90,70 @@ TELEGRAM_ENGINE=auto
 Kalitlar bo‘lmasa tizim **DEMO rejimda** ishlaydi: saytning barcha bo‘limlarini
 sinab ko‘rish mumkin, lekin haqiqiy xabar yuborilmaydi (tasdiqlash kodi: `12345`).
 
-### Click — to‘lovni qabul qilish (SHOP API)
+### To‘lov — Payment Hub
+
+Ilova Click bilan to‘g‘ridan-to‘g‘ri ishlamaydi. To‘lov kompaniyaning yagona
+shlyuzi — **Payment Hub** — da yaratiladi, mijoz Click sahifasida to‘laydi,
+natija ilovaga imzolangan webhook bilan keladi. Click kabinetida hech narsa
+sozlanmaydi.
 
 ```
-CLICK_MERCHANT_ID=<merchant ID>
-CLICK_SERVICE_ID=<servis ID>
-CLICK_MERCHANT_USER_ID=<merchant user ID>
-CLICK_SECRET_KEY=<maxfiy kalit>
+Mijoz  -- «To‘lash» -->  ilova  -- POST /v1/payments -->  Hub
+Mijoz  <-- redirect ---  ilova  <-- checkout_url -------  Hub
+Mijoz  -- karta + SMS kod ------------------------------>  Click
+ilova  <-- payment.succeeded (webhook, HMAC imzo) -------  Hub
 ```
 
-Bu to‘rttasini Click merchant kabinetidan olasiz. Servis sozlamalarida
-ikkita manzilni ko‘rsatish kerak:
+**1. Hub administratoriga yuboring** (admin panel → Tizim holati bo‘limida ham ko‘rinadi):
 
-Click Prepare va Complete ni `action` maydoni bilan ajratadi, shuning
-uchun **ikkala maydonga ham bitta manzil** yoziladi:
-
-| Maydon | Manzil |
+| Ma‘lumot | Qiymat |
 |---|---|
-| **Prepare URL** | `https://dns.vipads.uz/api/payments/click/webhook` |
-| **Complete URL** | `https://dns.vipads.uz/api/payments/click/webhook` |
+| Dastur kodi | `autoxabar` |
+| Dastur nomi | AutoXabar |
+| Webhook URL | `https://avtoxabar.vipads.uz/api/payments/hub/webhook` |
+| return_url manzillari | `avtoxabar.vipads.uz` |
+| Prepare tekshiruvi | kerak emas (obuna — tovar soni cheklanmagan) |
 
-Alohida manzil kerak bo‘lsa `/api/click/prepare` va `/api/click/complete`
-ham ishlaydi.
-
-Buyurtma raqami sifatida `payments.id` ishlatiladi — Click uni
-`merchant_trans_id` maydonida qaytaradi, alohida sozlash shart emas.
-
-Ikkala so‘rov ham `sign_string` (MD5) bilan tekshiriladi:
+**2. Administrator maxfiy kanal orqali beradi** — `.env` ga yozing:
 
 ```
-Prepare  : md5(click_trans_id + service_id + SECRET_KEY + merchant_trans_id
-                + amount + action + sign_time)
-Complete : md5(click_trans_id + service_id + SECRET_KEY + merchant_trans_id
-                + merchant_prepare_id + amount + action + sign_time)
+PAYMENT_HUB_URL=https://hub.example.uz
+PAYMENT_HUB_API_KEY=ph_live_...
+PAYMENT_HUB_WEBHOOK_SECRET=...
+PAYMENT_HUB_PROVIDER=click
 ```
 
-Hujjat: <https://docs.click.uz/shop-api/requests>
+Sinov hub‘ida `PAYMENT_HUB_PROVIDER=mock` — haqiqiy pulsiz (ishchi hub‘da
+mock yo‘q).
+
+**Qanday ishlaydi:**
+
+- summa hub‘ga **tiyinda** yuboriladi (5 000 so‘m → `500000`);
+- har bir to‘lov — alohida `order_id` (`AX-<id>-<tasodifiy>`) va
+  `Idempotency-Key`; tarmoq uzilsa yoki hub 503 qaytarsa, o‘sha kalit bilan
+  qayta uriladi — ikkinchi to‘lov yaratilmaydi;
+- webhook imzosi (`X-Hub-Signature`, HMAC-SHA256) xom tana ustidan va
+  5 daqiqalik vaqt oynasi bilan tekshiriladi, noto‘g‘ri bo‘lsa — 401;
+- takroriy webhook `X-Hub-Delivery` bo‘yicha tashlab yuboriladi, obuna esa
+  bitta to‘lovga **bir marta** uzayadi;
+- `return_url` ga qaytish «to‘landi» degani emas: natija sahifasi holatni
+  hub‘dan so‘raydi va tasdiq kelguncha o‘zini yangilab turadi;
+- webhook kelmay qolsa, fon vazifasi har 10 daqiqada ochiq to‘lovlar holatini
+  hub‘dan so‘raydi (`payment.expired` dan keyin kelgan `succeeded` ham
+  qabul qilinadi).
+
+> Qaytarish (`/refund`, `/reversal`) hozircha ilovadan qilinmaydi. Hub
+> orqali qaytarilgan to‘lov logga yoziladi — obuna va moliya daftarini
+> qo‘lda to‘g‘rilang.
+
+Hujjat: `payment-hub-guide-uz.pdf` (hub administratoridan).
 
 ### Obunani yangilash
 
-Click SHOP API faqat to‘lov havolasini beradi — kartani saqlab, keyin
-o‘zimiz yechish imkoni yo‘q. Shuning uchun obuna **qo‘lda** yangilanadi:
-muddat tugashiga 3 kun qolganda foydalanuvchiga eslatma boradi, u kabinetdan
+Hub faqat bir martalik to‘lovni qo‘llaydi — kartani saqlab, keyin o‘zimiz
+yechish imkoni yo‘q. Shuning uchun obuna **qo‘lda** yangilanadi: muddat
+tugashiga 3 kun qolganda foydalanuvchiga eslatma boradi, u kabinetdan
 Click orqali to‘laydi.
-
-Kelajakda avtomatik yechim kerak bo‘lsa, `services/payme.py` dagi Subscribe
-API kodi joyida turibdi (kalitlari bo‘sh) — yoki Click Merchant API ning
-`card_token/*` metodlarini ulash mumkin.
 
 ### Moliya
 
@@ -190,7 +208,7 @@ core/
   auth.py               sessiya, ruxsatlar, dekoratorlar
   utils.py              formatlash, CSRF, rate-limit, audit
 services/
-  click.py              Click SHOP API: Prepare / Complete + to'lov havolasi
+  payment_hub.py        Payment Hub: to'lov yaratish, webhook imzosi, holatni so'rash
   payme.py              Payme Merchant + Subscribe API (ishlatilmaydi, kalitlar bo'sh)
   billing.py            obunalar, to'lovlar, avto-uzaytirish
   finance.py            daftar, soliq, oylik hisobot, yechimlar
@@ -202,7 +220,7 @@ blueprints/
   auth_bp.py            kirish / ro'yxat / parol
   cabinet.py            foydalanuvchi kabineti
   admin.py              admin panel va moliya
-  click_bp.py           /api/payments/click/webhook (+ prepare/complete)
+  hub_bp.py             /api/payments/hub/webhook (Payment Hub hodisalari)
   payme_bp.py           /api/payme kirish nuqtasi (ishlatilmaydi)
 templates/  static/     Jinja2 shablonlari va dizayn tizimi
 data/autoxabar.db       SQLite bazasi
@@ -218,7 +236,6 @@ nginx/                            KONTEYNER ichidagi nginx
   snippets/cloudflare-only.conf     HOST nginx uchun: faqat CF'dan qabul qilish
 nginx/host/                       SERVERNING O'Z nginx'i uchun namunalar
   avtoxabar.vipads.uz.conf.example  sayt: TLS + Cloudflare + proxy
-  dns.vipads.uz-click.conf.example  Click webhook uchun location bloki
 scripts/                          serverda ishlatiladi (7-bo'lim)
   deploy.sh                         .env tekshiruvi, zaxira, yig'ish, ishga tushirish
   backup.sh                         baza + sessiyalar + rasmlar zaxirasi
@@ -266,8 +283,8 @@ Ikki domen, bitta server (`185.80.234.161`, Ubuntu, o‘z nginx‘i bilan):
 Mijoz --HTTPS--> Cloudflare --> host nginx --> konteyner nginx --> gunicorn
                                 avtoxabar.vipads.uz
 
-Click --HTTPS---------------->  host nginx --> konteyner nginx --> gunicorn
-                                dns.vipads.uz/api/payments/click/webhook
+Payment Hub --webhook--> Cloudflare --> host nginx --> konteyner --> gunicorn
+                        avtoxabar.vipads.uz/api/payments/hub/webhook
 ```
 
 Docker to‘plami faqat `127.0.0.1:8080` da tinglaydi — tashqariga
@@ -333,11 +350,11 @@ chiqariladi va skript to‘xtaydi. `.env` ni tahrirlang (`nano .env`):
 |---|---|
 | `ADMIN_PHONE` | o‘z raqamingiz (admin shu raqam bilan kiradi) |
 | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` | <https://my.telegram.org> — bo‘lmasa DEMO rejim |
-| `CLICK_MERCHANT_ID`, `CLICK_SERVICE_ID`, `CLICK_MERCHANT_USER_ID`, `CLICK_SECRET_KEY` | Click merchant kabinetidan |
+| `PAYMENT_HUB_URL`, `PAYMENT_HUB_API_KEY`, `PAYMENT_HUB_WEBHOOK_SECRET` | Payment Hub administratoridan (2-bo‘lim) |
 
 va skriptni qayta ishga tushiring. U `.env` ni tekshiradi (bo‘sh
 `SECRET_KEY`, `FLASK_DEBUG=1` kabi xatolarda to‘xtaydi, bo‘sh Telegram /
-Click kalitlari haqida ogohlantiradi), konteynerlarni yig‘adi, ilova
+Payment Hub kalitlari haqida ogohlantiradi), konteynerlarni yig‘adi, ilova
 sog‘lom bo‘lguncha kutadi va `127.0.0.1:8080` javob berayotganini
 tekshiradi.
 
@@ -384,22 +401,15 @@ sudo ln -s ../sites-available/avtoxabar.vipads.uz /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-**5. Host nginx — Click webhook.**
-`nginx/host/dns.vipads.uz-click.conf.example` dagi `location` blokini
-serverdagi mavjud `dns.vipads.uz` server bloki **ichiga** qo‘ying.
-Avval fayl boshidagi ogohlantirishni o‘qing: bu yo‘l uchun serverda eski
-qoida bor (POST → 403), u yangi blok bilan to‘qnashadi:
+**5. Payment Hub.** Hub administratoriga webhook manzilini va
+`avtoxabar.vipads.uz` domenini bering (2-bo‘lim). Webhook Cloudflare orqali
+keladi — Cloudflare‘da **Bot Fight Mode** yoki WAF qoidalari
+`/api/payments/hub/webhook` ga kelgan POST so‘rovlarni to‘smasligi kerak
+(hub challenge sahifasini o‘ta olmaydi va redirect‘ga ergashmaydi).
 
-```bash
-grep -rn "payments/click" /etc/nginx/
-```
-
-**6. Click kabineti.** Prepare URL va Complete URL maydonlarining
-ikkalasiga ham:
-
-```
-https://dns.vipads.uz/api/payments/click/webhook
-```
+> Avval `dns.vipads.uz/api/payments/click/webhook` ni bu ilovaga
+> yo‘naltirish rejalashtirilgan edi — endi bunday qilmang. Bu yo‘l
+> hub‘ning o‘ziga tegishli bo‘lishi mumkin.
 
 **Haqiqiy mijoz IP si.** Cloudflare orqasida hamma so‘rov Cloudflare
 serverlaridan keladi. `cloudflare-real-ip.conf` haqiqiy IP ni
@@ -425,14 +435,16 @@ yopiladi.
 curl -sI https://avtoxabar.vipads.uz | head -n 1
 ```
 
-`HTTP/2 200` kutiladi. Click yo‘li ochiqligini tekshirish:
+`HTTP/2 200` kutiladi. Webhook yo‘li ochiqligini tekshirish:
 
 ```bash
-curl -s -X POST https://dns.vipads.uz/api/payments/click/webhook -d "action=0"
+curl -s -X POST https://avtoxabar.vipads.uz/api/payments/hub/webhook -d "{}"
 ```
 
-JSON kelishi kerak (imzo yo‘q, shuning uchun `"error": -8` normal).
-403 / 404 / 502 kelsa — host nginx sozlamasida xato bor.
+`{"error":"invalid_signature"}` kelishi kerak (imzo yo‘q — 401 normal;
+`not_configured` kelsa — `.env` da `PAYMENT_HUB_*` to‘ldirilmagan).
+Cloudflare sahifasi (403 / challenge), 404 yoki 502 kelsa — hub ham shu
+xatoni oladi, sozlamani tekshiring.
 
 Admin panel: `https://avtoxabar.vipads.uz/kirish` → `ADMIN_PHONE` va
 `ADMIN_PASSWORD` bilan kiring.
@@ -518,13 +530,13 @@ Repozitoriyda `render.yaml` bor, shuning uchun sozlash bir necha bosishdan ibora
 | `ADMIN_PASSWORD` | kuchli parol o'ylab toping |
 | `TELEGRAM_API_ID` | my.telegram.org dan olingan raqam |
 | `TELEGRAM_API_HASH` | my.telegram.org dan olingan hash |
-| `CLICK_*` | Click merchant kabinetidan olingan 4 ta qiymat |
+| `PAYMENT_HUB_*` | Payment Hub administratoridan olingan 3 ta qiymat |
 | `BASE_URL` | deploydan keyin haqiqiy havola bilan to'ldiring |
 
 4. **Apply** → 3–5 daqiqada `https://autoxabar.onrender.com` tayyor bo'ladi
 
 Keyin **Environment** bo'limida `BASE_URL` ni haqiqiy havola bilan almashtiring
-(Click'dan qaytish manzili shu asosda quriladi).
+(to‘lovdan qaytish manzili shu asosda quriladi).
 
 ### Bepul tarifning cheklovlari
 
@@ -548,13 +560,10 @@ DATA_DIR=/var/data
 
 Shundan keyin baza deploylardan keyin ham saqlanadi.
 
-> **Click’ni bepul tarifda ulamang.** Xizmat uxlab qolganda Prepare/Complete
-> so‘rovlari timeout bo‘ladi va to‘lov Click tomonda qo‘lda tekshiruvga tushadi;
-> bundan tashqari baza saqlanmagani uchun to‘lov tarixi yo‘qoladi.
-> Avval Starter tarif + doimiy disk, keyin Click.
->
-> Click servisidagi manzil (ikkala maydonga ham):
-> `https://dns.vipads.uz/api/payments/click/webhook`
+> **Bepul tarifda to‘lov qabul qilmang.** Baza saqlanmagani uchun to‘lov
+> tarixi va obunalar yo‘qoladi, xizmat uxlab qolganda esa Payment Hub
+> webhook‘lari yetkazilmaydi. Avval Starter tarif + doimiy disk, keyin
+> to‘lov.
 
 ---
 

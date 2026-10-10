@@ -81,7 +81,7 @@ if [ ! -f .env ]; then
     yellow "Endi .env ni tahrirlang va qayta ishga tushiring:"
     echo "  - ADMIN_PHONE          o'z raqamingiz"
     echo "  - TELEGRAM_API_ID/HASH my.telegram.org dan (bo'lmasa DEMO rejim)"
-    echo "  - CLICK_*              Click merchant kabinetidan"
+    echo "  - PAYMENT_HUB_*        hub administratoridan (URL, API kaliti, webhook siri)"
     echo
     echo "  nano .env && ./scripts/deploy.sh"
     exit 0
@@ -109,15 +109,16 @@ esac
 base_url=$(env_get BASE_URL)
 case "$base_url" in
     https://*) ;;
-    *) warn "BASE_URL https emas ($base_url) — Click'dan qaytish havolasi buziladi" ;;
+    *) warn "BASE_URL https emas ($base_url) — to'lovdan qaytish havolasi (return_url) buziladi" ;;
 esac
 
 [ -n "$(env_get TELEGRAM_API_ID)" ] && [ -n "$(env_get TELEGRAM_API_HASH)" ] \
     || warn "TELEGRAM_API_ID/HASH bo'sh — xabarlar yuborilmaydi (DEMO rejim)"
 
-for k in CLICK_MERCHANT_ID CLICK_SERVICE_ID CLICK_SECRET_KEY; do
-    [ -n "$(env_get "$k")" ] || { warn "$k bo'sh — Click orqali to'lov ishlamaydi"; break; }
+for k in PAYMENT_HUB_URL PAYMENT_HUB_API_KEY PAYMENT_HUB_WEBHOOK_SECRET; do
+    [ -n "$(env_get "$k")" ] || { warn "$k bo'sh — to'lov qabul qilinmaydi"; break; }
 done
+[ "$(env_get PAYMENT_HUB_PROVIDER)" != "mock" ]     || warn "PAYMENT_HUB_PROVIDER=mock — haqiqiy to'lov olinmaydi (faqat sinov hub'i)"
 
 [ "$errors" -eq 0 ] || die ".env da $errors ta xato bor — tuzatib, qayta ishga tushiring."
 

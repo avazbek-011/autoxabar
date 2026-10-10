@@ -76,18 +76,17 @@ services:
       - key: TRIAL_DAYS
         value: "3"
 
-      # --- Click (Render so'raydi, repozitoriyga yozilmaydi) ---
-      # Click merchant kabinetidagi servis sozlamalariga qo'yiladigan manzillar:
-      #   Prepare URL  : https://<domen>/api/click/prepare
-      #   Complete URL : https://<domen>/api/click/complete
-      - key: CLICK_MERCHANT_ID
+      # --- Payment Hub (Render so'raydi, repozitoriyga yozilmaydi) ---
+      # Hub administratoriga beriladigan webhook manzili:
+      #   https://<domen>/api/payments/hub/webhook
+      - key: PAYMENT_HUB_URL
         sync: false
-      - key: CLICK_SERVICE_ID
+      - key: PAYMENT_HUB_API_KEY
         sync: false
-      - key: CLICK_MERCHANT_USER_ID
+      - key: PAYMENT_HUB_WEBHOOK_SECRET
         sync: false
-      - key: CLICK_SECRET_KEY
-        sync: false
+      - key: PAYMENT_HUB_PROVIDER
+        value: "click"
 
       # --- Payme: hozircha ishlatilmaydi (kod joyida, kalitlar bo'sh) ---
       - key: PAYME_MERCHANT_ID

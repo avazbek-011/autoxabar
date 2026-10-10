@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% from 'partials/icons.html' import icon, logo %}
 {% block title %}To‘lov natijasi — {{ cfg.BRAND_NAME }}{% endblock %}
+{% block head %}
+{% if next_url %}<meta http-equiv="refresh" content="5;url={{ next_url }}">{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="auth-wrap">
@@ -18,9 +21,14 @@
       <div class="empty-ico" style="background:var(--warn-bg);border-color:rgba(251,191,36,.4);color:var(--warn)">
         {{ icon('clock', 30) }}
       </div>
-      <h2 class="mb">To‘lov kutilmoqda</h2>
+      <h2 class="mb">To‘lov tekshirilmoqda</h2>
       <p class="muted mb-lg">
-        To‘lov hali tasdiqlanmadi. Bir necha daqiqadan so‘ng kabinetdan holatni tekshiring.
+        {% if next_url %}
+          To‘lov tizimidan tasdiq kutilmoqda — sahifa o‘zi yangilanadi.
+        {% else %}
+          To‘lov hali tasdiqlanmadi. To‘lagan bo‘lsangiz, tasdiq bir necha
+          daqiqada keladi — holatni kabinetdan tekshiring.
+        {% endif %}
       </p>
     {% elif payment %}
       <div class="empty-ico" style="background:var(--danger-bg);border-color:rgba(251,113,133,.4);color:var(--danger)">

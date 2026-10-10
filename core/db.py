@@ -229,23 +229,34 @@ CREATE TABLE IF NOT EXISTS payme_transactions (
 );
 CREATE INDEX IF NOT EXISTS idx_ptx_payment ON payme_transactions(payment_id);
 
--- ============ CLICK TRANZAKSIYALARI ============
-CREATE TABLE IF NOT EXISTS click_transactions (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    click_trans_id  TEXT    UNIQUE NOT NULL,
-    click_paydoc_id TEXT    DEFAULT '',
-    payment_id      INTEGER NOT NULL,
-    amount          INTEGER NOT NULL,
-    state           INTEGER NOT NULL DEFAULT 0,   -- 0 kutilmoqda, 1 to'langan, -1 bekor
-    error_note      TEXT    DEFAULT '',
-    sign_time       TEXT    DEFAULT '',
-    prepare_time    TEXT,
-    perform_time    TEXT,
-    cancel_time     TEXT,
-    created_at      TEXT    NOT NULL,
-    updated_at      TEXT    NOT NULL
+-- ============ PAYMENT HUB TO'LOVLARI ============
+-- Bitta mahalliy to'lov (payments) = bitta hub buyurtmasi (order_id).
+-- status — hub'dagi holat: new | created | pending | succeeded | expired |
+-- partially_refunded | refunded
+CREATE TABLE IF NOT EXISTS hub_payments (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    payment_id          INTEGER NOT NULL UNIQUE,
+    order_id            TEXT    NOT NULL UNIQUE,
+    idempotency_key     TEXT    NOT NULL,
+    hub_payment_id      TEXT    UNIQUE,
+    provider            TEXT    NOT NULL DEFAULT 'click',
+    status              TEXT    NOT NULL DEFAULT 'new',
+    provider_payment_id TEXT    DEFAULT '',
+    checkout_url        TEXT    DEFAULT '',
+    expires_at          TEXT    DEFAULT '',
+    last_event          TEXT    DEFAULT '',
+    created_at          TEXT    NOT NULL,
+    updated_at          TEXT    NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_ctx_payment ON click_transactions(payment_id);
+CREATE INDEX IF NOT EXISTS idx_hub_created ON hub_payments(created_at);
+
+-- Takroriy webhook'larni tashlab yuborish uchun (X-Hub-Delivery)
+CREATE TABLE IF NOT EXISTS hub_webhook_deliveries (
+    delivery_id    TEXT PRIMARY KEY,
+    event          TEXT DEFAULT '',
+    hub_payment_id TEXT DEFAULT '',
+    received_at    TEXT NOT NULL
+);
 
 -- ============ MOLIYA DAFTARI ============
 CREATE TABLE IF NOT EXISTS finance_ledger (
